@@ -46,3 +46,9 @@ body{
     background-color: #e8f4ff;
     color: #333;
 }
+.sidebar-logo{
+    width: 4vw;
+    margin-right: 5px;
+    margin-left: 10px;
+    margin-bottom: 5px;
+}

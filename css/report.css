@@ -24,3 +24,9 @@ body{
 .pos:hover{
     color: #a0d7ff;
 }
+.sidebar-logo{
+    width: 4vw;
+    margin-right: 5px;
+    margin-left: 10px;
+    margin-bottom: 5px;
+}

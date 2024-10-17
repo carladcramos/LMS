@@ -24,3 +24,40 @@ body{
 .pos:hover{
     color: #a0d7ff;
 }
+
+
+
+/*eto na bago css*/
+.table-container {
+    padding: 20px ;
+    margin-left: 23.5%;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    background-color: #f9f9f9;
+    position: relative;
+    top: 100px;
+    width: 70%;
+}
+
+/* Individual tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background-color: #0b4d8b;
+    color: white;
+}
+.sidebar-logo{
+    width: 4vw;
+    margin-right: 5px;
+    margin-left: 10px;
+    margin-bottom: 5px;
+}

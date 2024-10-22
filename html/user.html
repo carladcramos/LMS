@@ -47,6 +47,105 @@
     
     
     </section>
+
+    <section id="listss">
+        <div class="list-container">
+            <div class="row mb-4">
+                <div class="d-flex flex-column align-items-end">
+                    <a href="#" class="new btn btn-primary mb-2" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
+                        <i class="bi bi-plus"></i> New User
+                    </a>
+
+                    <!-- modal form -->
+                    <div class="mod modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                          <div class="modal-content">
+                            <div class="modal-header">
+                              <h1 class="modal-title fs-5" id="staticBackdropLabel">New Laundry</h1>
+                              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label for="exampleFormControlInput1" class="form-label">Name</label>
+                                    <input type="email" class="form-control" id="exampleFormControlInput1">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="exampleFormControlTextarea1" class="form-label">Username</label>
+                                    <input type="email" class="form-control" id="exampleFormControlInput1">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">Password</label>
+                                    <input type="password" class="form-control" id="password" required>
+                                </div>
+                                <div class="col-2 mb-5 position-relative">
+                                    <select class="sel form-select" id="paymentMethod" required>
+                                        <option value="" disabled selected class="drop">Position</option>
+                                        <option value="Bedsheets">Admin</option>
+                                        <option value="Clothes">Employee</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="modal-footer">
+                              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                              <a href="user.html" class="btn btn-primary">Add</a>   
+                            </div>
+                          </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <table class="table table-bordered text-center">
+                    <thead>
+                        <tr>
+                        <th class="text-center">#</th>
+                        <th scope="col" class="text-center">Name</th>
+                        <th scope="col" class="text-center">Position</th>
+                        <th scope="col" class="text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                        <th>1</th>
+                        <td>Mark</td>
+                        <td>
+                            <span class="claim px-2 ">Admin</span>
+                        </td>
+                        <td>
+                            <div class="dropdown">
+                                <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                  Action
+                                </button>
+                                <ul class="dropdown-menu">
+                                  <li><a class="dropdown-item bg-primary text-light" href="#">Edit</a></li>
+                                  <li><a class="dropdown-item bg-danger text-light" href="#">Remove</a></li>
+                                </ul>
+                            </div>
+                        </td>
+                        </tr>
+                        <tr>
+                            <th>2</th>
+                            <td>Zuckyer</td>
+                            <td>
+                                <span class="claim px-2 ">Employee</span>
+                            </td>
+                            <td>
+                                <div class="dropdown">
+                                    <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                      Action
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                      <li><a class="dropdown-item bg-primary text-light" href="#">Edit</a></li>
+                                      <li><a class="dropdown-item bg-danger text-light" href="#">Remove</a></li>
+                                    </ul>
+                                </div>
+                            </td>
+                            </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
     
 
 

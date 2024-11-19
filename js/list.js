@@ -153,3 +153,74 @@ function addToTable(name, status) {
     nameValue = '';
     statusValue = '';
 }
+
+
+// Function to add a new row to the table #tables
+function addToTable(name, status) {
+    const tableBody = document.querySelector('#tables tbody'); // Select the main table body
+    const newRow = document.createElement('tr'); // Create a new row
+
+    const customerNameCell = document.createElement('td');
+    const statusCell = document.createElement('td');
+    const dateCell = document.createElement('td');  // Create a new cell for the date
+    const actionCell = document.createElement('td');
+
+    // Generate a unique ID based on the current date and time (ISO format)
+    const dateId = new Date().toISOString();  // Use ISO format for the date ID
+    dateCell.textContent = dateId;  // Set the date ID as the content of the cell
+
+    // Fill the row with customer name, status, and date
+    customerNameCell.textContent = name;
+    statusCell.textContent = status;  // Set the customer status
+
+    // Create a View button for the action column
+    const viewButton = document.createElement('button');
+    viewButton.textContent = 'View';
+    viewButton.classList.add('btn', 'btn-primary', 'btn-sm', 'me-2');
+    viewButton.addEventListener('click', function () {
+        displayCustomerDetails(name, status, dateId); // Call the function to display details
+    });
+
+    // Create delete button for the action column
+    const deleteButton = document.createElement('button');
+    deleteButton.textContent = 'Delete';
+    deleteButton.classList.add('btn', 'btn-danger', 'btn-sm');
+    deleteButton.addEventListener('click', function () {
+        newRow.remove(); // Remove the current row when delete button is clicked
+    });
+
+    // Append the buttons to the action cell
+    actionCell.appendChild(viewButton);
+    actionCell.appendChild(deleteButton);
+
+    // Append the date, customer name, status, and action cells to the row
+    newRow.appendChild(dateCell);  // Append the date cell first
+    newRow.appendChild(customerNameCell);
+    newRow.appendChild(statusCell);
+    newRow.appendChild(actionCell);
+
+    // Append the new row to the main table body
+    tableBody.appendChild(newRow);
+
+    // Reset the input form and clear the name and status values.
+    nameForm.value = '';
+    statusForm.value = '';
+    nameValue = '';
+    statusValue = '';
+}
+
+// Function to display customer details
+function displayCustomerDetails(name, status, dateId) {
+    const customerDetailsSection = document.querySelector('#customer-details'); // Assuming you have a section to display details
+
+    // Clear previous content
+    customerDetailsSection.innerHTML = '';
+
+    // Populate new details
+    customerDetailsSection.innerHTML = `
+        <h5>Customer Details</h5>
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>Status:</strong> ${status}</p>
+        <p><strong>Date Added:</strong> ${dateId}</p>
+    `;
+}

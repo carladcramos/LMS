@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"name": "LMS-2",
+			"path": "../.."
+		}
+	],
+	"settings": {
+		"liveServer.settings.port": 5502
+	}
+}

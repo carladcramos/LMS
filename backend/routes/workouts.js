@@ -1,0 +1,28 @@
+ const express = require('express')
+ const {
+  createList,
+  getLists,
+  getList,
+  deleteList,
+  updateList
+ } = require('../controllers/workoutController')
+
+
+ const router = express.Router()
+
+  //GET a all workout
+ router.get('/', getLists)
+
+ //GET a single workout
+ router.get('/:id', getList)
+  
+ //POST a new workout
+ router.post('/', createList)
+
+//DELETE a workout
+ router.delete('/:id', deleteList)
+
+//UPDATE a workout
+ router.patch('/:id', updateList)
+
+ module.exports = router

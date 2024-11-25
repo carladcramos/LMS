@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Date Filter Table</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f8f9fa;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      width: 80%;
+      margin: auto;
+      background: #fff;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      padding: 20px;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .filter-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      background-color: #f4f4f4;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .filter-section label {
+      display: flex;
+      flex-direction: column;
+      font-weight: bold;
+    }
+    .filter-section input {
+      padding: 8px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .filter-section button {
+      padding: 10px 15px;
+      font-size: 14px;
+      color: #fff;
+      background-color: #007bff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .filter-section button:hover {
+      background-color: #0056b3;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background-color: #f4f4f4;
+      font-weight: bold;
+    }
+    .text-right {
+      text-align: right;
+    }
+    tfoot td {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h2>Transaction Report</h2>
+    </div>
+    <div class="filter-section">
+      <label>
+        Date From:
+        <input type="date" id="dateFrom" value="2021-09-01">
+      </label>
+      <label>
+        Date To:
+        <input type="date" id="dateTo" value="2021-09-01">
+      </label>
+      <button onclick="filter()">Filter</button>
+      <button onclick="printReport()">Print</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Customer Name</th>
+          <th class="text-right">Total Amount</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <!-- Dynamic rows will be appended here -->
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="2">Total</td>
+          <td id="totalAmount" class="text-right">0.00</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <script>
+    // Sample data for transactions
+    const data = [
+      { date: "2021-09-01", customer: "John Doe", amount: 150.00 },
+      { date: "2021-09-02", customer: "Jane Smith", amount: 200.00 },
+      { date: "2021-09-03", customer: "Emily Johnson", amount: 100.00 },
+    ];
+
+    function filter() {
+      const dateFrom = document.getElementById("dateFrom").value;
+      const dateTo = document.getElementById("dateTo").value;
+
+      const filteredData = data.filter(item => {
+        return item.date >= dateFrom && item.date <= dateTo;
+      });
+
+      const tableBody = document.getElementById("tableBody");
+      tableBody.innerHTML = "";
+
+      let total = 0;
+      filteredData.forEach(item => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${item.date}</td>
+          <td>${item.customer}</td>
+          <td class="text-right">${item.amount.toFixed(2)}</td>
+        `;
+        tableBody.appendChild(row);
+        total += item.amount;
+      });
+
+      document.getElementById("totalAmount").textContent = total.toFixed(2);
+    }
+
+    function printReport() {
+      window.print();
+    }
+  </script>
+</body>
+</html>

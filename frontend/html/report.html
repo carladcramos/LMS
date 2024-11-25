@@ -11,40 +11,76 @@
     <section>
         <div class="sidebar">
             <h4 class="title text-center text-light">Laundry Buddy</h4>
-                    <ul class="nav flex-column">
-                        <li class="bar nav-item">
-                            <a class="pos nav-link" href="index.html">
-                                <span><i class="bi bi-house-door"></i></span> Home
-                            </a>
-                        </li>
-                        <li class="bar nav-item">
-                            <a class="pos nav-link" href="list.html">
-                                <span><i class="bi bi-basket3"></i></span> Laundry List
-                            </a>
-                        </li>
-                        <li class="bar nav-item">
-                            <a class="pos nav-link" href="inventory.html">
-                                <span><i class="bi bi-box-seam"></i></span> Inventory
-                            </a>
-                        </li>
-                        <li class="bar nav-item">
-                            <a class="pos nav-link" href="report.html">
-                                <span><i class="bi bi-file-earmark-arrow-down"></i></span> Reports
-                            </a>
-                        </li>
-                        <li class="bar nav-item">
-                            <a class="out nav-link" href="login.html">
-                                <span><i class="bi bi-box-arrow-left"></i></span> Log-out
-                            </a>
-                        </li>
-                    </ul>
+            <ul class="nav flex-column">
+                <li class="bar nav-item">
+                    <a class="pos nav-link" href="index.html">
+                        <span><i class="bi bi-house-door"></i></span> Home
+                    </a>
+                </li>
+                <li class="bar nav-item">
+                    <a class="pos nav-link" href="list.html">
+                        <span><i class="bi bi-basket3"></i></span> Laundry List
+                    </a>
+                </li>
+                <li class="bar nav-item">
+                    <a class="pos nav-link" href="inventory.html">
+                        <span><i class="bi bi-box-seam"></i></span> Inventory
+                    </a>
+                </li>
+                <li class="bar nav-item">
+                    <a class="pos nav-link" href="report.html">
+                        <span><i class="bi bi-file-earmark-arrow-down"></i></span> Reports
+                    </a>
+                </li>
+                <li class="bar nav-item">
+                    <a class="out nav-link" href="login.html">
+                        <span><i class="bi bi-box-arrow-left"></i></span> Log-out
+                    </a>
+                </li>
+            </ul>
         </div>
-    
-    
     </section>
-    
 
+    <main style="margin-left: 17%; padding: 20px;">
+        <h1>Sales Report</h1>
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <label for="dateFrom" class="form-label">Date From:</label>
+                <input type="date" id="dateFrom" class="form-control">
+            </div>
+            <div class="col-md-3">
+                <label for="dateTo" class="form-label">Date To:</label>
+                <input type="date" id="dateTo" class="form-control">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button id="filterBtn" class="btn btn-primary me-2">Filter</button>
+                <button id="printBtn" class="btn btn-secondary">Print</button>
+            </div>
+        </div>
+
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Customer Name</th>
+                    <th>Total Amount</th>
+                </tr>
+            </thead>
+            <tbody id="reportTableBody">
+                <tr>
+                    <td colspan="3" class="text-center">No data available</td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="2" class="text-end">Total:</th>
+                    <th id="totalAmount">0.00</th>
+                </tr>
+            </tfoot>
+        </table>
+    </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="report.js"></script>
 </body>
 </html>

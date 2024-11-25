@@ -35,3 +35,73 @@ body{
 .pos:hover{
     color: #a0d7ff;
 }
+/* sa reciept */
+
+.container {
+    width: 80%;
+    margin-left: 450px; /* Keep horizontal alignment */
+    position: relative; /* Allows you to adjust position with 'top' */
+    top: 50px; /* Moves the container down by 50px */
+    background: #fff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 20px;
+    padding-top: 50px;
+}
+  .header {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  .filter-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background-color: #f4f4f4;
+    border-radius: 8px;
+    margin-bottom: 20px;
+  }
+  .filter-section label {
+    display: flex;
+    flex-direction: column;
+    font-weight: bold;
+  }
+  .filter-section input {
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+  .filter-section button {
+    padding: 10px 15px;
+    font-size: 14px;
+    color: #fff;
+    background-color: #007bff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  .filter-section button:hover {
+    background-color: #0056b3;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-left: auto; /* Center the table */
+  }
+  th, td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+  }
+  th {
+    background-color: #f4f4f4;
+    font-weight: bold;
+  }
+  .text-right {
+    text-align: right;
+  }
+  tfoot td {
+    font-weight: bold;
+  }
+  

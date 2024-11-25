@@ -88,7 +88,7 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5>Supply In/Out List</h5>
-                        <button class="btn btn-primary btn-sm">Manage Supply</button>
+                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#manageSupplyModal">Manage Supply</button>
                     </div>
                     <div class="card-body">
                         <table class="table table-striped table-bordered">
@@ -139,7 +139,56 @@
             </div>
         </div>
     </div>
-    
+
+<!-- Modal for Manage Supply -->
+<div class="modal fade" id="manageSupplyModal" tabindex="-1" aria-labelledby="manageSupplyModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="manageSupplyModalLabel">Manage Supply</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Modal Form -->
+                <form>
+                    <!-- Supply Name Dropdown -->
+                    <div class="mb-3">
+                        <label for="supplyName" class="form-label">Supply Name</label>
+                        <select class="form-select" id="supplyName">
+                            <!-- Blank Option -->
+                            <option value="" disabled selected>Select a Supply</option>
+                            <option value="baking-soda">Baking Soda</option>
+                            <option value="baking-soda">Detergent Bar</option>
+                            <option value="fabric-conditioner">Fabric Conditioner</option>
+                            <option value="fabric-detergent">Fabric Detergent</option>
+                        </select>
+                    </div>
+
+                    <!-- Quantity Field -->
+                    <div class="mb-3">
+                        <label for="quantity" class="form-label">Quantity</label>
+                        <input type="number" class="form-control" id="quantity" placeholder="Enter quantity">
+                    </div>
+
+                    <!-- Supply Type Dropdown -->
+                    <div class="mb-3">
+                        <label for="supplyType" class="form-label">Supply Type</label>
+                        <select class="form-select" id="supplyType">
+                            <option value="in">IN</option>
+                            <option value="out">OUT</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
     <!-- Bootstrap JS and Icons -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>

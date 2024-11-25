@@ -45,5 +45,16 @@ body {
 .modal-footer {
     border-top: none; /* Remove border from the footer */
 }
+.custom-modal {
+    max-width: 300px; /* Adjust width to a smaller size */
+    width: 80%; /* Set to a percentage of the screen width (you can adjust the percentage) */
+}
 
+.custom-modal .modal-title {
+    font-size: 15px; /* Adjust the title font size */
+}
+
+.custom-modal .modal-footer .btn {
+    font-size: 14px; /* Adjust the button font size */
+}
 

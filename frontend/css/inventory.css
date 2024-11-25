@@ -34,7 +34,16 @@ body {
     color: #a0d7ff;
 }
 
-/* Adjust main content margin to avoid overlapping with sidebar */
-.container {
-    margin-left: 18%;
+.modal-content {
+    border: none;  /* Remove any border */
 }
+
+.modal-header {
+    border-bottom: none; /* Ensure no line appears below the header */
+}
+
+.modal-footer {
+    border-top: none; /* Remove border from the footer */
+}
+
+

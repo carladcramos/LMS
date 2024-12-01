@@ -1,190 +1,148 @@
-document.addEventListener("DOMContentLoaded", function () {
-    let editingRow = null;
-    const saveEditButton = document.getElementById("saveEditBtn");
+// Store for current supplies and their stocks
+const supplies = {
+    'Detergent Bar': { id: 'detergent-stock', stock: 20 },
+    'Fabric Conditioner': { id: 'fabric-conditioner-stock', stock: 10 },
+    'Fabric Detergent': { id: 'fabric-detergent-stock', stock: 20 }
+};
 
-    // Open the modal to edit a supply record
-    document.querySelectorAll('.editBtn').forEach(button => {
-        button.addEventListener('click', function (event) {
-            const row = event.target.closest('tr');
-            editingRow = row;
-            const date = row.querySelector('.date').textContent;
-            const supplyName = row.querySelector('.supply-name').textContent;
-            const qty = row.querySelector('.qty').textContent;
-            const type = row.querySelector('.type').textContent.trim();
-
-            // Populate modal with existing data
-            document.getElementById('editDate').value = date;
-            document.getElementById('editSupplyName').value = supplyName;
-            document.getElementById('editQuantity').value = qty;
-            document.getElementById('editSupplyType').value = type === 'IN' ? 'IN' : 'OUT';
-
-            // Open edit modal
-            new bootstrap.Modal(document.getElementById('editSupplyModal')).show();
-        });
+// Initialize when document is ready
+document.addEventListener('DOMContentLoaded', () => {
+    // Add event listeners for the manage supply form
+    document.getElementById('submitSupplyForm').addEventListener('click', handleSupplySubmit);
+    
+    // Add event listeners for edit and delete buttons
+    document.getElementById('supplyTable').addEventListener('click', (e) => {
+        const target = e.target;
+        // Check if the clicked element or its parent is a button
+        const button = target.closest('.editBtn, .deleteBtn');
+        if (!button) return;
+        
+        if (button.classList.contains('editBtn')) {
+            handleEdit(e);
+        }
+        if (button.classList.contains('deleteBtn')) {
+            handleDelete(e);
+        }
     });
 
-    // Save the changes and update the supply list and inventory
-    saveEditButton.addEventListener('click', function () {
-        const date = document.getElementById('editDate').value;
-        const supplyName = document.getElementById('editSupplyName').value;
-        const qty = parseInt(document.getElementById('editQuantity').value);
-        const type = document.getElementById('editSupplyType').value;
+    // Add event listener for edit form submission
+    document.getElementById('saveEditBtn').addEventListener('click', handleEditSubmit);
+    
+    // Add event listener for delete confirmation
+    document.getElementById('confirmDeleteBtn').addEventListener('click', confirmDelete);
+});
 
-        if (!date || !supplyName || !qty || !type) {
-            alert("Please fill in all fields.");
-            return;
-        }
+// Handle new supply submission
+function handleSupplySubmit() {
+    const date = document.getElementById('supplyDate').value;
+    const supplyName = document.getElementById('supplyName').value;
+    const quantity = parseInt(document.getElementById('quantity').value);
+    const type = document.getElementById('supplyType').value;
 
-        const previousType = editingRow.querySelector('.type').textContent.trim();
-        const previousQty = parseInt(editingRow.querySelector('.qty').textContent);
+    if (!date || !supplyName || !quantity || !type) {
+        alert('Please fill all fields');
+        return;
+    }
 
-        // Update the supply list
-        editingRow.querySelector('.date').textContent = date;
-        editingRow.querySelector('.supply-name').textContent = supplyName;
-        editingRow.querySelector('.qty').textContent = qty;
-        editingRow.querySelector('.type').innerHTML = `<span class="badge bg-${type === 'IN' ? 'info' : 'danger'}">${type}</span>`;
+    // Update stock
+    updateStock(supplyName, quantity, type);
 
-        // Update inventory based on type and quantity change
-        if (previousType === 'IN' && type === 'OUT') {
-            // If previous type was IN and now it's OUT, we need to subtract the quantity from inventory
-            const inventoryRow = Array.from(document.querySelectorAll('#inventoryTable tbody tr')).find(row => {
-                return row.querySelector('.inventory-supply-name').textContent === supplyName;
-            });
-
-            if (inventoryRow) {
-                const stockCell = inventoryRow.querySelector('td:nth-child(3)');
-                let currentStock = parseInt(stockCell.textContent);
-                stockCell.textContent = currentStock - previousQty; // Subtract previous quantity
-            }
-        } else if (previousType === 'OUT' && type === 'IN') {
-            // If previous type was OUT and now it's IN, we need to add the quantity to inventory
-            const inventoryRow = Array.from(document.querySelectorAll('#inventoryTable tbody tr')).find(row => {
-                return row.querySelector('.inventory-supply-name').textContent === supplyName;
-            });
-
-            if (inventoryRow) {
-                const stockCell = inventoryRow.querySelector('td:nth-child(3)');
-                let currentStock = parseInt(stockCell.textContent);
-                stockCell.textContent = currentStock + qty; // Add new quantity
-            }
-        } else if (type === 'IN') {
-            // If the type is IN, update the inventory by setting it to the new quantity
-            const inventoryRow = Array.from(document.querySelectorAll('#inventoryTable tbody tr')).find(row => {
-                return row.querySelector('.inventory-supply-name').textContent === supplyName;
-            });
-
-            if (inventoryRow) {
-                const stockCell = inventoryRow.querySelector('td:nth-child(3)');
-                stockCell.textContent = qty; // Set inventory stock to the new quantity
-            }
-        } else if (type === 'OUT') {
-            // If the type is OUT, we subtract from the inventory
-            const inventoryRow = Array.from(document.querySelectorAll('#inventoryTable tbody tr')).find(row => {
-                return row.querySelector('.inventory-supply-name').textContent === supplyName;
-            });
-
-            if (inventoryRow) {
-                const stockCell = inventoryRow.querySelector('td:nth-child(3)');
-                let currentStock = parseInt(stockCell.textContent);
-
-                if (currentStock >= qty) {
-                    stockCell.textContent = currentStock - qty; // Subtract from the inventory
-                } else {
-                    alert("Not enough stock available.");
-                    return;
-                }
-            }
-        }
-
-        // Close the modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('editSupplyModal'));
-        modal.hide();
-    });
-
-    // Handle delete confirmation
-    let rowToDelete = null;
-    document.querySelectorAll('.deleteBtn').forEach(button => {
-        button.addEventListener('click', function (event) {
-            rowToDelete = event.target.closest('tr');
-            new bootstrap.Modal(document.getElementById('deleteConfirmationModal')).show();
-        });
-    });
-
-    // Confirm deletion
-    document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
-        if (rowToDelete) {
-            const supplyName = rowToDelete.querySelector('.supply-name').textContent;
-            const qty = parseInt(rowToDelete.querySelector('.qty').textContent);
-            const type = rowToDelete.querySelector('.type').textContent.trim();
-
-            // If the deleted row is an OUT entry, update inventory
-            if (type === 'OUT') {
-                const inventoryRow = Array.from(document.querySelectorAll('#inventoryTable tbody tr')).find(row => {
-                    return row.querySelector('.inventory-supply-name').textContent === supplyName;
-                });
-
-                if (inventoryRow) {
-                    const stockCell = inventoryRow.querySelector('td:nth-child(3)');
-                    let currentStock = parseInt(stockCell.textContent);
-                    stockCell.textContent = currentStock + qty; // Add back the stock
-                }
-            }
-
-            rowToDelete.remove();
-        }
-
-        // Close delete modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('deleteConfirmationModal'));
-        modal.hide();
-    });
-
-    // Handle adding new supply records
-    document.getElementById('submitSupplyForm').addEventListener('click', function () {
-        const supplyName = document.getElementById('supplyName').value;
-        const quantity = parseInt(document.getElementById('quantity').value);
-        const supplyType = document.getElementById('supplyType').value;
-
-        if (!supplyName || !quantity || !supplyType) {
-            alert("Please fill in all fields.");
-            return;
-        }
-
-        // Add the new record to the supply table
-        const table = document.getElementById('supplyTable').getElementsByTagName('tbody')[0];
-        const newRow = table.insertRow();
-        newRow.innerHTML = `
-            <td>${new Date().toLocaleDateString()}</td>
+    // Add new row to table
+    const tbody = document.querySelector('#supplyTable tbody');
+    const newRow = `
+        <tr data-id="${Date.now()}">
+            <td class="date">${date}</td>
             <td class="supply-name">${supplyName}</td>
             <td class="qty">${quantity}</td>
-            <td class="type"><span class="badge bg-${supplyType === 'IN' ? 'info' : 'danger'}">${supplyType}</span></td>
-            <td><button class="btn btn-sm btn-primary editBtn"><i class="bi bi-pencil"></i> Edit</button>
-                <button class="btn btn-sm btn-danger deleteBtn"><i class="bi bi-trash"></i> Delete</button></td>
-        `;
+            <td class="type"><span class="badge bg-${type === 'IN' ? 'info' : 'warning'}">${type}</span></td>
+            <td>
+                <button class="btn btn-sm btn-primary editBtn"><i class="bi bi-pencil"></i> Edit</button>
+                <button class="btn btn-sm btn-danger deleteBtn"><i class="bi bi-trash"></i> Delete</button>
+            </td>
+        </tr>
+    `;
+    tbody.insertAdjacentHTML('afterbegin', newRow);
 
-        // If the supply type is "IN", update the inventory
-        if (supplyType === 'IN') {
-            const inventoryRow = Array.from(document.querySelectorAll('#inventoryTable tbody tr')).find(row => {
-                return row.querySelector('.inventory-supply-name').textContent === supplyName;
-            });
+    // Close modal and reset form
+    const modal = bootstrap.Modal.getInstance(document.getElementById('manageSupplyModal'));
+    modal.hide();
+    document.getElementById('manageSupplyForm').reset();
+}
 
-            if (inventoryRow) {
-                const stockCell = inventoryRow.querySelector('td:nth-child(3)');
-                let currentStock = parseInt(stockCell.textContent);
-                stockCell.textContent = currentStock + quantity; // Add to the inventory
-            } else {
-                // If the item doesn't exist in the inventory, create a new row (optional)
-                const inventoryTable = document.getElementById('inventoryTable').getElementsByTagName('tbody')[0];
-                const newInventoryRow = inventoryTable.insertRow();
-                newInventoryRow.innerHTML = `
-                    <td>${inventoryTable.rows.length + 1}</td>
-                    <td class="inventory-supply-name">${supplyName}</td>
-                    <td>${quantity}</td>
-                `;
-            }
-        }
+// Handle edit button click
+function handleEdit(e) {
+    const row = e.target.closest('tr');
+    const date = row.querySelector('.date').textContent;
+    const supplyName = row.querySelector('.supply-name').textContent;
+    const qty = row.querySelector('.qty').textContent;
+    const type = row.querySelector('.type span').textContent;
 
-        // Close the modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('manageSupplyModal'));
-        modal.hide();
-    });
+    // Populate edit modal
+    document.getElementById('editDate').value = date;
+    document.getElementById('editSupplyName').value = supplyName;
+    document.getElementById('editQuantity').value = qty;
+    document.getElementById('editSupplyType').value = type;
+
+    // Store the row ID for later use
+    document.getElementById('editSupplyForm').dataset.rowId = row.dataset.id;
+
+    // Show edit modal
+    const editModal = new bootstrap.Modal(document.getElementById('editSupplyModal'));
+    editModal.show();
+}
+
+// Handle edit form submission
+function handleEditSubmit() {
+    const rowId = document.getElementById('editSupplyForm').dataset.rowId;
+    const row = document.querySelector(`tr[data-id="${rowId}"]`);
+    
+    // Get old values for stock adjustment
+    const oldSupplyName = row.querySelector('.supply-name').textContent;
+    const oldQty = parseInt(row.querySelector('.qty').textContent);
+    const oldType = row.querySelector('.type span').textContent;
+
+    // Get new values
+    const newDate = document.getElementById('editDate').value;
+    const newSupplyName = document.getElementById('editSupplyName').value;
+    const newQty = parseInt(document.getElementById('editQuantity').value);
+    const newType = document.getElementById('editSupplyType').value;
+
+    // Revert old stock change and apply new one
+    updateStock(oldSupplyName, oldQty, oldType === 'IN' ? 'OUT' : 'IN');
+    updateStock(newSupplyName, newQty, newType);
+
+    // Update row
+    row.querySelector('.date').textContent = newDate;
+    row.querySelector('.supply-name').textContent = newSupplyName;
+    row.querySelector('.qty').textContent = newQty;
+    row.querySelector('.type span').textContent = newType;
+    row.querySelector('.type span').className = `badge bg-${newType === 'IN' ? 'info' : 'warning'}`;
+
+    // Close modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('editSupplyModal'));
+    modal.hide();
+}
+
+// Handle the delete functionality
+const supplyTable = document.querySelector('#supplyTable tbody');
+
+supplyTable.addEventListener('click', function(e) {
+    if (e.target.classList.contains('deleteBtn')) {
+        const row = e.target.closest('tr'); // Get the closest row of the clicked delete button
+        supplyTable.removeChild(row); // Remove the row from the table body
+    }
 });
+
+
+// Update stock levels
+function updateStock(supplyName, quantity, type) {
+    const supply = supplies[supplyName];
+    if (supply) {
+        if (type === 'IN') {
+            supply.stock += quantity;
+        } else {
+            supply.stock -= quantity;
+        }
+        document.getElementById(supply.id).textContent = supply.stock;
+    }
+}

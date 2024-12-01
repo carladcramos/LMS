@@ -1,5 +1,6 @@
 body {
     background-color: #e6f2fd;
+    overflow-x: hidden;
 }
 
 .sidebar {
@@ -45,5 +46,10 @@ body {
 .modal-footer {
     border-top: none; /* Remove border from the footer */
 }
+.container{
+    margin-left: 19%; 
+    padding-top: 20px;
+}
+
 
 

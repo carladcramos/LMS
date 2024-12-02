@@ -39,7 +39,7 @@ body{
 
 .container {
     width: 80%;
-    margin-left: 450px; /* Keep horizontal alignment */
+    margin-left: 280px; /* Keep horizontal alignment */
     position: relative; /* Allows you to adjust position with 'top' */
     top: 50px; /* Moves the container down by 50px */
     background: #fff;

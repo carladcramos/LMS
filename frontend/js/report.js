@@ -32,5 +32,39 @@ const data = [
   }
 
   function printReport() {
-    window.print();
+    const filteredContent = document.getElementById("tableBody").innerHTML;
+    const total = document.getElementById("totalAmount").textContent;
+    
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Transaction Report</title>
+          <style>
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #ddd; padding: 8px; }
+            .text-right { text-align: right; }
+            .total { margin-top: 20px; font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <h2>Transaction Report</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Customer</th>
+                <th class="text-right">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${filteredContent}
+            </tbody>
+          </table>
+          <div class="total">Total Amount: $${total}</div>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
   }

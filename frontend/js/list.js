@@ -1,15 +1,15 @@
-// Select elements for category form
-const categoryInput = document.querySelector('#exampleFormControlInput2'); // Laundry category input
-const weightInput = document.querySelector('#add-weight input'); // Weight input
+// Select elements
+const categoryInput = document.querySelector('#laundryCategorySelect');
+const weightInput = document.querySelector('#weightInput');
 const addCategoryButton = document.querySelector('#add-button');
-const laundryTableBody = document.querySelector('#tablee table tbody'); // Laundry table body
+const laundryTableBody = document.querySelector('#tablee table tbody');
 
 let categoryValue = '';
 let weightValue = '';
 
 // Handle category input
-categoryInput.addEventListener('input', (e) => {
-    categoryValue = e.target.value.trim();
+categoryInput.addEventListener('change', (e) => {
+    categoryValue = e.target.value;
 });
 
 // Handle weight input
@@ -32,36 +32,28 @@ addCategoryButton.addEventListener('click', (e) => {
 function addLaundryItem(category, weight) {
     const row = document.createElement('tr');
 
-    // Cells for data
     const categoryCell = document.createElement('td');
     const weightCell = document.createElement('td');
     const unitPriceCell = document.createElement('td');
     const amountCell = document.createElement('td');
     const actionCell = document.createElement('td');
 
-    // Fill cells
     categoryCell.textContent = category;
     weightCell.textContent = `${weight} kg`;
-    const unitPrice = 50; // Unit price assumption
+    const unitPrice = 50; // Example unit price
     unitPriceCell.textContent = `₱${unitPrice}`;
     amountCell.textContent = `₱${(unitPrice * parseFloat(weight)).toFixed(2)}`;
 
-    // Delete button
     const deleteButton = document.createElement('button');
     deleteButton.textContent = 'Delete';
     deleteButton.classList.add('btn', 'btn-danger', 'btn-sm');
     deleteButton.addEventListener('click', () => row.remove());
 
-    // Append delete button to action cell
     actionCell.appendChild(deleteButton);
 
-    // Append all cells to the row
     row.append(categoryCell, weightCell, unitPriceCell, amountCell, actionCell);
-
-    // Append the row to the table body
     laundryTableBody.appendChild(row);
 
-    // Clear inputs
     categoryInput.value = '';
     weightInput.value = '';
     categoryValue = '';
@@ -69,7 +61,7 @@ function addLaundryItem(category, weight) {
 }
 
 // Modal form handling
-const nameInput = document.querySelector('#exampleFormControlInput1');
+const nameInput = document.querySelector('#customerNameInput');
 const statusSelect = document.querySelector('#statusSelect');
 const addModalButton = document.querySelector('#adds');
 const customerTableBody = document.querySelector('#tables tbody');
@@ -90,38 +82,47 @@ addModalButton.addEventListener('click', (e) => {
 
     if (nameValue && statusValue) {
         addCustomer(nameValue, statusValue);
-        const modal = bootstrap.Modal.getInstance(document.getElementById('staticBackdrop'));
-        modal.hide();
+        bootstrap.Modal.getInstance(document.querySelector('#staticBackdrop')).hide();
     } else {
         alert('Please fill in both name and status!');
     }
 });
 
+// Function to add a customer to the main table
 function addCustomer(name, status) {
     const row = document.createElement('tr');
 
+    const dateCell = document.createElement('td');
     const nameCell = document.createElement('td');
     const statusCell = document.createElement('td');
-    const dateCell = document.createElement('td');
     const actionCell = document.createElement('td');
 
-    const currentDate = new Date().toLocaleString();
+    const currentDate = new Date().toLocaleDateString(); // Display current date
     dateCell.textContent = currentDate;
 
     nameCell.textContent = name;
     statusCell.textContent = status;
 
-    const deleteButton = document.createElement('button');
-    deleteButton.textContent = 'Delete';
-    deleteButton.classList.add('btn', 'btn-danger', 'btn-sm');
-    deleteButton.addEventListener('click', () => row.remove());
+    const viewButton = document.createElement('a');
+    viewButton.textContent = 'View';
+    viewButton.href = '#';
+    viewButton.classList.add('btn', 'btn-info', 'btn-sm', 'me-2');
 
-    actionCell.appendChild(deleteButton);
+    const deleteButton = document.createElement('a');
+    deleteButton.textContent = 'Delete';
+    deleteButton.href = '#';
+    deleteButton.classList.add('btn', 'btn-danger', 'btn-sm');
+    deleteButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        row.remove();
+    });
+
+    actionCell.append(viewButton, deleteButton);
 
     row.append(dateCell, nameCell, statusCell, actionCell);
-
     customerTableBody.appendChild(row);
 
+    // Clear modal input fields
     nameInput.value = '';
     statusSelect.value = '';
     nameValue = '';

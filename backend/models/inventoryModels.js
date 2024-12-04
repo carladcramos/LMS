@@ -9,7 +9,8 @@ const inventorySchema = new Schema({
     },
     supplyName:{
         type: String,
-        required: true
+        required: true,
+        index: true
     },
     quantity:{
         type: Number,
@@ -19,7 +20,13 @@ const inventorySchema = new Schema({
         type: String,
         required: true
     },
+    totalQuantity: {
+        type: Number,
+        required: true
+    }
 }, {timestamps: true})
+
+inventorySchema.index({ supplyName: 1, createdAt: -1 });
 
 module.exports = mongoose.model('inventory', inventorySchema)
 

@@ -1,13 +1,12 @@
 const express = require('express');
-const {
-  createInventory,
-  getInventories,
-  getInventory,
-  deleteInventory,
-  updateInventory
-} = require('../controllers/inventoryController'); // Make sure this points to the correct controller
-
 const router = express.Router();
+const {
+    getInventories,
+    getInventory,
+    createInventory,
+    deleteInventory,
+    updateInventory
+} = require('../controllers/inventoryController');
 
 // GET all inventories
 router.get('/all', getInventories);

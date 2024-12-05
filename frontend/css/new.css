@@ -1,0 +1,41 @@
+.table {
+    margin-top: 20px;
+}
+.table-hover tbody tr:hover {
+    background-color: #f8f9fa;
+}
+.table-primary {
+    background-color: #e3f2fd;
+}
+.btn-sm {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+}
+.modal-body p {
+    margin-bottom: 0.5rem;
+}
+#orderNotes {
+    min-height: 100px;
+    margin-top: 0.5rem;
+}
+.modal-footer {
+    border-top: 1px solid #dee2e6;
+    padding: 1rem;
+}
+.status-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+}
+.status-pending {
+    background-color: #ffc107;
+    color: #000;
+}
+.status-progress {
+    background-color: #17a2b8;
+    color: #fff;
+}
+.status-completed {
+    background-color: #28a745;
+    color: #fff;
+}

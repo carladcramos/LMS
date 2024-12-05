@@ -2,7 +2,7 @@
 const categoryInput = document.querySelector('#laundryCategorySelect');
 const weightInput = document.querySelector('#weightInput');
 const addCategoryButton = document.querySelector('#add-button');
-const laundryTableBody = document.querySelector('#tablee table tbody');
+const laundryTableBody = document.querySelector('#laundryTableBody');
 
 let categoryValue = '';
 let weightValue = '';
@@ -21,8 +21,23 @@ weightInput.addEventListener('input', (e) => {
 addCategoryButton.addEventListener('click', (e) => {
     e.preventDefault();
 
+    // Get current values directly from inputs
+    const categoryValue = categoryInput.value;
+    const weightValue = weightInput.value.trim();
+
     if (categoryValue && weightValue) {
+        // Validate weight is a positive number and not more than 8kg
+        const weight = parseFloat(weightValue);
+        if (weight <= 0 || weight > 8) {
+            alert('Weight must be between 0 and 8 kg!');
+            return;
+        }
+        
         addLaundryItem(categoryValue, weightValue);
+        
+        // Reset inputs after adding
+        categoryInput.value = '';
+        weightInput.value = '';
     } else {
         alert('Please fill in both the category and weight!');
     }
@@ -40,9 +55,9 @@ function addLaundryItem(category, weight) {
 
     categoryCell.textContent = category;
     weightCell.textContent = `${weight} kg`;
-    const unitPrice = 50; // Example unit price
+    const unitPrice = 175;
     unitPriceCell.textContent = `₱${unitPrice}`;
-    amountCell.textContent = `₱${(unitPrice * parseFloat(weight)).toFixed(2)}`;
+    amountCell.textContent = `₱175.00`; // Fixed amount of 175
 
     const deleteButton = document.createElement('button');
     deleteButton.textContent = 'Delete';

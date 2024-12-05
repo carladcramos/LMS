@@ -62,8 +62,18 @@ function loadSampleOrders() {
 }
 
 function calculatePrice(category, weight) {
-    const unitPrice = 175; // Base price for all categories
-    return weight * unitPrice;
+    const baseUnitPrice = 175;
+    const additionalFeePerKilo = 20;
+    let totalAmount = baseUnitPrice;
+    
+    // If weight is over 8kg, add additional fee for each kg over 8
+    if (weight > 8) {
+        const extraKilos = weight - 8;
+        const additionalFee = extraKilos * additionalFeePerKilo;
+        totalAmount += additionalFee;
+    }
+    
+    return totalAmount;
 }
 
 function addLaundryItem() {
@@ -85,15 +95,16 @@ function addLaundryItem() {
         return;
     }
 
-    // Validate weight
-    if (weight <= 0 || weight > 8) {
-        alert('Weight must be between 0 and 8 kg');
+    // Validate weight is positive
+    if (weight <= 0) {
+        alert('Weight must be greater than 4 kg');
         return;
     }
 
-    // Fixed price calculation
+    // Calculate price with additional fee if applicable
     const unitPrice = 175;
-    const amount = unitPrice;
+    const amount = calculatePrice(category, weight);
+    const additionalFee = weight > 8 ? (weight - 8) * 20 : 0;
 
     // Initialize current order if it doesn't exist
     if (!currentOrder) {
@@ -113,7 +124,8 @@ function addLaundryItem() {
         category,
         weight,
         unitPrice,
-        amount
+        amount,
+        additionalFee
     });
 
     // Update total
@@ -134,12 +146,15 @@ function updateOrderSummary() {
 
     if (currentOrder && currentOrder.items) {
         currentOrder.items.forEach((item, index) => {
+            const additionalFeeText = item.weight > 8 ? 
+                `<br><small class="text-muted">(Includes ₱${(item.weight - 8) * 20} additional fee)</small>` : '';
+            
             const row = `
                 <tr>
                     <td>${item.category}</td>
                     <td>${item.weight} kg</td>
                     <td>₱${item.unitPrice.toFixed(2)}</td>
-                    <td>₱${item.amount.toFixed(2)}</td>
+                    <td>₱${item.amount.toFixed(2)}${additionalFeeText}</td>
                     <td>
                         <button class="btn btn-danger btn-sm" onclick="removeItem(${index})">Remove</button>
                     </td>
@@ -168,6 +183,10 @@ function removeItem(index) {
     currentOrder.items.splice(index, 1);
     currentOrder.totalAmount = currentOrder.items.reduce((sum, item) => sum + item.amount, 0);
     updateOrderSummary();
+    
+    // Hide complete order button if no items
+    document.getElementById('completeOrderBtn').style.display = 
+        currentOrder.items.length > 0 ? 'block' : 'none';
 }
 
 function completeOrder() {
@@ -210,13 +229,18 @@ function updateMainTable() {
                         <option value="Pending" ${order.status === 'Pending' ? 'selected' : ''}>Pending</option>
                         <option value="In Progress" ${order.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
                         <option value="Completed" ${order.status === 'Completed' ? 'selected' : ''}>Completed</option>
-                        <option value="Claimed" ${order.status === 'Claimed' ? 'selected' : ''}>Claimed</option>
+                    
+                       
                     </select>
                 </td>
                 <td>${new Date(order.date).toLocaleDateString()}</td>
                 <td>
-                    <button class="btn btn-info btn-sm me-1" onclick="viewOrder('${order.orderId}')">View</button>
-                    <button class="btn btn-danger btn-sm" onclick="deleteOrder('${order.orderId}')">Delete</button>
+                    <button class="btn btn-info btn-sm me-1" onclick="viewOrder('${order.orderId}')">
+                        View
+                    </button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteOrder('${order.orderId}')">
+                        Delete
+                    </button>
                 </td>
             </tr>
         `;
@@ -228,15 +252,111 @@ function updateStatus(orderId, newStatus) {
     const order = orders.find(o => o.orderId === orderId);
     if (order) {
         order.status = newStatus;
-        updateMainTable();
+        // In a real application, you would save this to a backend
     }
 }
 
 function viewOrder(orderId) {
     const order = orders.find(o => o.orderId === orderId);
-    if (order) {
-        showReceipt(order);
-    }
+    if (!order) return;
+
+    const viewContent = `
+        <div class="container">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <h6>Order Information</h6>
+                    <p><strong>Order ID:</strong> ${order.orderId}</p>
+                    <p><strong>Date:</strong> ${new Date(order.date).toLocaleString()}</p>
+                    <p><strong>Status:</strong> ${order.status}</p>
+                </div>
+                <div class="col-md-6">
+                    <h6>Customer Information</h6>
+                    <p><strong>Name:</strong> ${order.customerName}</p>
+                    <p><strong>Phone:</strong> ${order.phoneNumber}</p>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-12">
+                    <h6>Order Items</h6>
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Category</th>
+                                <th>Weight (kg)</th>
+                                <th>Unit Price</th>
+        
+                                <th>Additional Fee</th>
+                                <th>Total Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${order.items.map(item => {
+                               
+                                const additionalFee = item.weight > 8 ? (item.weight - 8) * 20 : 0;
+                                return `
+                                    <tr>
+                                        <td>${item.category}</td>
+                                        <td>${item.weight}</td>
+                                        <td>₱${item.unitPrice.toFixed(2)}</td>
+
+                                        <td>${additionalFee > 0 ? `₱${additionalFee.toFixed(2)}` : '-'}</td>
+                                        <td>₱${item.amount.toFixed(2)}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="4" class="text-end"><strong>Total Amount:</strong></td>
+                                <td><strong>₱${order.totalAmount.toFixed(2)}</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <small>
+                            <strong>Note:</strong> Additional fee of ₱20 per kilogram applies for weights exceeding 8kg.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Insert content and show modal
+    document.getElementById('viewOrderContent').innerHTML = viewContent;
+    new bootstrap.Modal(document.getElementById('viewOrderModal')).show();
+}
+
+function printViewOrder() {
+    const printWindow = window.open('', '', 'width=800,height=600');
+    printWindow.document.write(`
+        <html>
+            <head>
+                <title>Order Details</title>
+                <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+                <style>
+                    @media print {
+                        .modal-footer { display: none !important; }
+                        .alert { border: 1px solid #ccc !important; }
+                    }
+                    body { padding: 20px; }
+                </style>
+            </head>
+            <body>
+                ${document.getElementById('viewOrderContent').innerHTML}
+            </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
 }
 
 function deleteOrder(orderId) {
@@ -252,7 +372,7 @@ function generateOrderId() {
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const day = date.getDate().toString().padStart(2, '0');
     const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    return `LB${year}${month}${day}-${random}`;
+    return `JB${year}${month}${day}-${random}`;
 }
 
 function showReceipt(order = currentOrder) {
@@ -327,6 +447,7 @@ function printReceipt() {
     printWindow.close();
 }
 
+// Add this function to reset the modal when it's closed
 function resetModal() {
     currentOrder = null;
     const tableBody = document.getElementById('orderTableBody');
@@ -340,66 +461,6 @@ function resetModal() {
     
     const laundryForm = document.getElementById('laundryForm');
     if (laundryForm) laundryForm.reset();
-}
-
-
-function viewOrder(orderId) {
-    const order = orders.find(o => o.orderId === orderId);
-    if (!order) return;
-
-    const viewContent = `
-        <div class="container">
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <h6>Order Information</h6>
-                    <p><strong>Order ID:</strong> ${order.orderId}</p>
-                    <p><strong>Date:</strong> ${new Date(order.date).toLocaleString()}</p>
-                    <p><strong>Status:</strong> ${order.status}</p>
-                </div>
-                <div class="col-md-6">
-                    <h6>Customer Information</h6>
-                    <p><strong>Name:</strong> ${order.customerName}</p>
-                    <p><strong>Phone:</strong> ${order.phoneNumber}</p>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-12">
-                    <h6>Order Items</h6>
-                    <table class="table table-bordered">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Category</th>
-                                <th>Weight (kg)</th>
-                                <th>Unit Price</th>
-                                <th>Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${order.items.map(item => `
-                                <tr>
-                                    <td>${item.category}</td>
-                                    <td>${item.weight}</td>
-                                    <td>₱${item.unitPrice.toFixed(2)}</td>
-                                    <td>₱${item.amount.toFixed(2)}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <td colspan="3" class="text-end"><strong>Total Amount:</strong></td>
-                                <td><strong>₱${order.totalAmount.toFixed(2)}</strong></td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
-        </div>
-    `;
-
-    // Insert content and show modal
-    document.getElementById('viewOrderContent').innerHTML = viewContent;
-    new bootstrap.Modal(document.getElementById('viewOrderModal')).show();
 }
 
 function printViewOrder() {

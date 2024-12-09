@@ -5,7 +5,7 @@ const submitButton = document.querySelector('#submitSupplyForm');
 async function populateTable() {
     try {
         console.log('Fetching inventory data...');
-        const response = await fetch('http://localhost:4000/api/inventory/all');
+        const response = await fetch('http://localhost:4001/api/inventory/all');
         console.log('Response status:', response.status);
         
         const inventories = await response.json();
@@ -37,7 +37,6 @@ async function populateTable() {
                 <td class="qty">${inventory.quantity}</td>
                 <td class="type"><span class="badge ${inventory.supplyType === 'IN' ? 'bg-info' : 'bg-warning'}">${inventory.supplyType}</span></td>
                 <td>
-                    <button class="btn btn-sm btn-primary editBtn"><i class="bi bi-pencil"></i> Edit</button>
                     <button class="btn btn-sm btn-danger deleteBtn"><i class="bi bi-trash"></i> Delete</button>
                 </td>
             `;
@@ -76,7 +75,7 @@ async function populateTable() {
 // Function to send data to the server
 const sendData = async (inventory) => {
     try {
-        const response = await fetch('http://localhost:4000/api/inventory', {
+        const response = await fetch('http://localhost:4001/api/inventory', {
             method: "POST",
             headers: {
                 "Content-Type": "application/json; charset=UTF-8"
@@ -142,7 +141,7 @@ function attachEventListeners() {
             
             if (confirm('Are you sure you want to delete this item?')) {
                 try {
-                    const response = await fetch(`http://localhost:4000/api/inventory/${id}`, {
+                    const response = await fetch(`http://localhost:4001/api/inventory/${id}`, {
                         method: 'DELETE',
                         headers: {
                             'Content-Type': 'application/json'
@@ -170,7 +169,7 @@ function attachEventListeners() {
 
 async function openEditModal(id) {
     try {
-        const response = await fetch(`http://localhost:4000/api/inventory/${id}`);
+        const response = await fetch(`http://localhost:4001/api/inventory/${id}`);
         const data = await response.json();
 
         // Populate the edit modal with current values

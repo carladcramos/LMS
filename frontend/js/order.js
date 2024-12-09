@@ -195,6 +195,17 @@ function completeOrder() {
         return;
     }
 
+    // Add to completedOrders in localStorage
+    const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
+    completedOrders.push({
+        date: currentOrder.date,
+        orderId: currentOrder.orderId,
+        customer: currentOrder.customerName,
+        phoneNumber: currentOrder.phoneNumber,
+        amount: currentOrder.totalAmount
+    });
+    localStorage.setItem('completedOrders', JSON.stringify(completedOrders));
+
     // Add order to the list
     orders.push({...currentOrder});
     
@@ -204,7 +215,8 @@ function completeOrder() {
     // Show receipt
     showReceipt();
     
-    // Close modal
+    // Reset current order and close modal
+    resetModal();
     const modal = bootstrap.Modal.getInstance(document.getElementById('newOrderModal'));
     if (modal) {
         modal.hide();

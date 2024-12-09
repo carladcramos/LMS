@@ -1,3 +1,16 @@
+const API_URL = 'http://localhost:5000/api';
+
+async function loadCompletedOrders() {
+    try {
+        const response = await fetch(`${API_URL}/orders/completed`);
+        const data = await response.json();
+        return data;
+    } catch (err) {
+        console.error('Error loading completed orders:', err);
+        return [];
+    }
+}
+
 // Load and display initial data when page loads
 document.addEventListener('DOMContentLoaded', function() {
     initializeDateRange();
@@ -12,16 +25,16 @@ function initializeDateRange() {
     document.getElementById("dateTo").value = today.toISOString().split('T')[0];
 }
 
-function loadAndDisplayData() {
-    updateSummaryCards();
-    filter();
+async function loadAndDisplayData() {
+    const completedOrders = await loadCompletedOrders();
+    updateSummaryCards(completedOrders);
+    filter(completedOrders);
 }
 
-function updateSummaryCards() {
-    const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
+function updateSummaryCards(completedOrders) {
     const today = new Date().toISOString().split('T')[0];
     
-    // Calculate today's sales
+    // Calculate today's sales (only completed orders)
     const todaySales = completedOrders
         .filter(order => new Date(order.date).toISOString().split('T')[0] === today)
         .reduce((sum, order) => sum + order.amount, 0);
@@ -47,10 +60,9 @@ function updateSummaryCards() {
     document.getElementById("totalOrders").textContent = completedOrders.length;
 }
 
-function filter() {
+function filter(completedOrders) {
     const dateFrom = document.getElementById("dateFrom").value;
     const dateTo = document.getElementById("dateTo").value;
-    const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
     
     const filteredData = completedOrders.filter(order => {
         const orderDate = new Date(order.date).toISOString().split('T')[0];

@@ -6,6 +6,7 @@ let currentOrder = null;
 document.addEventListener('DOMContentLoaded', function() {
     loadSampleOrders();
     setupEventListeners();
+    updateStatistics();
     
     // Add modal reset on close
     const newOrderModal = document.getElementById('newOrderModal');
@@ -20,6 +21,18 @@ function setupEventListeners() {
             e.preventDefault();
             addLaundryItem();
         });
+    }
+
+    // Add search input event listener
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', filterOrders);
+    }
+
+    // Add status filter event listener
+    const statusFilter = document.getElementById('statusFilter');
+    if (statusFilter) {
+        statusFilter.addEventListener('change', filterOrders);
     }
 }
 
@@ -42,7 +55,7 @@ function loadSampleOrders() {
             ]
         },
         {
-            orderId: 'LB240315-002',
+            orderId: 'JB240315-002',
             customerName: 'Maria Garcia',
             phoneNumber: '09187654321',
             totalAmount: 525.00,
@@ -59,6 +72,7 @@ function loadSampleOrders() {
         }
     ];
     updateMainTable();
+    updateStatistics();
 }
 
 function calculatePrice(category, weight) {
@@ -221,15 +235,16 @@ function completeOrder() {
     if (modal) {
         modal.hide();
     }
+    updateStatistics();
 }
 
-function updateMainTable() {
+function updateMainTable(ordersToShow = orders) {
     const tableBody = document.getElementById('mainTableBody');
     if (!tableBody) return;
 
     tableBody.innerHTML = '';
 
-    orders.forEach(order => {
+    ordersToShow.forEach(order => {
         const row = `
             <tr>
                 <td>${order.orderId}</td>
@@ -241,8 +256,6 @@ function updateMainTable() {
                         <option value="Pending" ${order.status === 'Pending' ? 'selected' : ''}>Pending</option>
                         <option value="In Progress" ${order.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
                         <option value="Completed" ${order.status === 'Completed' ? 'selected' : ''}>Completed</option>
-                    
-                       
                     </select>
                 </td>
                 <td>${new Date(order.date).toLocaleDateString()}</td>
@@ -266,6 +279,7 @@ function updateStatus(orderId, newStatus) {
         order.status = newStatus;
         // In a real application, you would save this to a backend
     }
+    updateStatistics();
 }
 
 function viewOrder(orderId) {
@@ -375,6 +389,7 @@ function deleteOrder(orderId) {
     if (confirm('Are you sure you want to delete this order?')) {
         orders = orders.filter(o => o.orderId !== orderId);
         updateMainTable();
+        updateStatistics();
     }
 }
 
@@ -497,4 +512,54 @@ function printViewOrder() {
     printWindow.focus();
     printWindow.print();
     printWindow.close();
+}
+
+function filterOrders() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const statusFilter = document.getElementById('statusFilter').value;
+    
+    const filteredOrders = orders.filter(order => {
+        const matchesSearch = 
+            order.orderId.toLowerCase().includes(searchTerm) ||
+            order.customerName.toLowerCase().includes(searchTerm) ||
+            order.phoneNumber.includes(searchTerm);
+            
+        const matchesStatus = 
+            !statusFilter || 
+            order.status === statusFilter;
+            
+        return matchesSearch && matchesStatus;
+    });
+    
+    updateMainTable(filteredOrders);
+}
+
+function resetFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('statusFilter').value = '';
+    updateMainTable(orders);
+}
+
+// Add this function to update all statistics
+function updateStatistics() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to start of today
+
+    // Filter orders for different statistics
+    const pendingOrders = orders.filter(order => order.status === 'Pending');
+    const inProgressOrders = orders.filter(order => order.status === 'In Progress');
+    const completedTodayOrders = orders.filter(order => {
+        const orderDate = new Date(order.date);
+        orderDate.setHours(0, 0, 0, 0);
+        return order.status === 'Completed' && orderDate.getTime() === today.getTime();
+    });
+
+    // Calculate today's revenue from completed orders
+    const todayRevenue = completedTodayOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+
+    // Update the statistics cards
+    document.getElementById('pendingCount').textContent = pendingOrders.length;
+    document.getElementById('inProgressCount').textContent = inProgressOrders.length;
+    document.getElementById('completedTodayCount').textContent = completedTodayOrders.length;
+    document.getElementById('todayRevenue').textContent = `₱${todayRevenue.toFixed(2)}`;
 }   

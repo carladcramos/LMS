@@ -39,7 +39,7 @@ function setupEventListeners() {
 function loadSampleOrders() {
     orders = [
         {
-            orderId: 'LB240315-001',
+            orderId: 'JB240315-001',
             customerName: 'John Smith',
             phoneNumber: '09123456789',
             totalAmount: 350.00,
@@ -273,13 +273,177 @@ function updateMainTable(ordersToShow = orders) {
     });
 }
 
-function updateStatus(orderId, newStatus) {
+async function updateStatus(orderId, newStatus) {
     const order = orders.find(o => o.orderId === orderId);
-    if (order) {
-        order.status = newStatus;
-        // In a real application, you would save this to a backend
+    if (!order) return;
+
+    // Don't show confirmation if status hasn't changed
+    if (order.status === newStatus) return;
+
+    // Prepare modal content based on status
+    let modalContent = {
+        title: 'Update Order Status',
+        body: '',
+        icon: '',
+        confirmButtonText: 'Confirm'
+    };
+
+    switch (newStatus) {
+        case 'In Progress':
+            modalContent = {
+                title: 'Start Processing Order',
+                body: `<div class="text-center">
+                    <i class="fas fa-spinner fa-spin fa-3x text-primary mb-3"></i>
+                    <p>You are about to start processing order <strong>${orderId}</strong>.</p>
+                    <p class="text-muted">This indicates that the laundry items are now being washed/dried.</p>
+                </div>`,
+                confirmButtonText: 'Start Processing'
+            };
+            break;
+        case 'Completed':
+            modalContent = {
+                title: 'Complete Order',
+                body: `<div class="text-center">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <p>Are you sure this order is ready for pickup?</p>
+                    <div class="alert alert-info">
+                        <strong>Order Details:</strong><br>
+                        Customer: ${order.customerName}<br>
+                        Amount: ₱${order.totalAmount.toFixed(2)}
+                    </div>
+                    <p class="text-muted">This will mark the order as paid and completed.</p>
+                </div>`,
+                confirmButtonText: 'Complete Order'
+            };
+            break;
+        case 'Pending':
+            modalContent = {
+                title: 'Revert to Pending',
+                body: `<div class="text-center">
+                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                    <p>Are you sure you want to mark this order as pending?</p>
+                    <p class="text-muted">This will return the order to the queue.</p>
+                </div>`,
+                confirmButtonText: 'Mark as Pending'
+            };
+            break;
     }
-    updateStatistics();
+
+    // Create and show modal
+    const modalHtml = `
+        <div class="modal fade" id="statusConfirmModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">${modalContent.title}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        ${modalContent.body}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="confirmStatusBtn">
+                            ${modalContent.confirmButtonText}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Remove existing modal if any
+    const existingModal = document.getElementById('statusConfirmModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    // Add modal to document
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    // Get modal instance
+    const modalElement = document.getElementById('statusConfirmModal');
+    const modal = new bootstrap.Modal(modalElement);
+
+    // Handle confirmation
+    return new Promise((resolve) => {
+        const confirmBtn = document.getElementById('confirmStatusBtn');
+        confirmBtn.addEventListener('click', async () => {
+            try {
+                order.status = newStatus;
+                updateStatistics();
+
+                if (newStatus === 'Completed') {
+                    // Save to completed orders
+                    const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
+                    completedOrders.push({
+                        date: order.date,
+                        orderId: order.orderId,
+                        customer: order.customerName,
+                        phoneNumber: order.phoneNumber,
+                        amount: order.totalAmount,
+                        status: 'Completed'
+                    });
+                    localStorage.setItem('completedOrders', JSON.stringify(completedOrders));
+
+                    modal.hide();
+                    // Show success message before redirecting
+                    showToast('Order completed successfully!', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'report.html';
+                    }, 1500);
+                } else {
+                    modal.hide();
+                    showToast(`Order status updated to ${newStatus}`, 'success');
+                }
+            } catch (err) {
+                console.error('Error updating status:', err);
+                showToast('Error updating order status', 'error');
+                // Reset select element
+                const selectElement = document.querySelector(`select[onchange="updateStatus('${orderId}', this.value)"]`);
+                if (selectElement) {
+                    selectElement.value = order.status;
+                }
+            }
+        });
+
+        // Handle modal dismiss
+        modalElement.addEventListener('hidden.bs.modal', () => {
+            const selectElement = document.querySelector(`select[onchange="updateStatus('${orderId}', this.value)"]`);
+            if (selectElement) {
+                selectElement.value = order.status;
+            }
+            modalElement.remove();
+        });
+
+        modal.show();
+    });
+}
+
+// Add this helper function for showing toasts
+function showToast(message, type = 'info') {
+    const toastHtml = `
+        <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+            <div class="toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'}" role="alert">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', toastHtml);
+    const toastElement = document.querySelector('.toast');
+    const toast = new bootstrap.Toast(toastElement, { delay: 3000 });
+    toast.show();
+
+    // Remove toast after it's hidden
+    toastElement.addEventListener('hidden.bs.toast', () => {
+        toastElement.remove();
+    });
 }
 
 function viewOrder(orderId) {

@@ -1,167 +1,267 @@
-const API_URL = 'http://localhost:5000/api';
+// Initialize variables
+let orders = [];
 
-async function loadCompletedOrders() {
-    try {
-        const response = await fetch(`${API_URL}/orders/completed`);
-        const data = await response.json();
-        return data;
-    } catch (err) {
-        console.error('Error loading completed orders:', err);
-        return [];
-    }
-}
-
-// Load and display initial data when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    initializeDateRange();
-    loadAndDisplayData();
+// Load orders when the page loads
+document.addEventListener('DOMContentLoaded', async function() {
+    await loadOrders();
+    setupDateRangeListeners();
+    // Set default to today's data
+    const today = new Date();
+    document.getElementById('dateRangePreset').value = 'today';
+    updateDateRange('today');
 });
 
-function initializeDateRange() {
-    const today = new Date();
-    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    
-    document.getElementById("dateFrom").value = firstDayOfMonth.toISOString().split('T')[0];
-    document.getElementById("dateTo").value = today.toISOString().split('T')[0];
-}
-
-async function loadAndDisplayData() {
-    const completedOrders = await loadCompletedOrders();
-    updateSummaryCards(completedOrders);
-    filter(completedOrders);
-}
-
-function updateSummaryCards(completedOrders) {
-    const today = new Date().toISOString().split('T')[0];
-    
-    // Calculate today's sales (only completed orders)
-    const todaySales = completedOrders
-        .filter(order => new Date(order.date).toISOString().split('T')[0] === today)
-        .reduce((sum, order) => sum + order.amount, 0);
-    
-    // Calculate weekly sales (last 7 days)
-    const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    const weeklySales = completedOrders
-        .filter(order => new Date(order.date) >= weekAgo)
-        .reduce((sum, order) => sum + order.amount, 0);
-    
-    // Calculate monthly sales
-    const monthAgo = new Date();
-    monthAgo.setMonth(monthAgo.getMonth() - 1);
-    const monthlySales = completedOrders
-        .filter(order => new Date(order.date) >= monthAgo)
-        .reduce((sum, order) => sum + order.amount, 0);
-
-    // Update the UI
-    document.getElementById("todaySales").textContent = `₱${todaySales.toFixed(2)}`;
-    document.getElementById("weeklySales").textContent = `₱${weeklySales.toFixed(2)}`;
-    document.getElementById("monthlySales").textContent = `₱${monthlySales.toFixed(2)}`;
-    document.getElementById("totalOrders").textContent = completedOrders.length;
-}
-
-function filter(completedOrders) {
-    const dateFrom = document.getElementById("dateFrom").value;
-    const dateTo = document.getElementById("dateTo").value;
-    
-    const filteredData = completedOrders.filter(order => {
-        const orderDate = new Date(order.date).toISOString().split('T')[0];
-        return orderDate >= dateFrom && orderDate <= dateTo;
-    });
-
-    displayFilteredData(filteredData);
-}
-
-function displayFilteredData(filteredData) {
-    const tableBody = document.getElementById("tableBody");
-    tableBody.innerHTML = "";
-    let totalAmount = 0;
-
-    filteredData.forEach(order => {
-        const row = `
+// Function to load orders from API
+async function loadOrders() {
+    try {
+        console.log('Fetching orders...');
+        const response = await fetch('http://localhost:4000/api/laundry');
+        if (!response.ok) {
+            throw new Error('Failed to fetch orders');
+        }
+        const allOrders = await response.json();
+        console.log('All orders:', allOrders);
+        
+        // Only consider completed orders
+        orders = allOrders.filter(order => order.status === 'Completed');
+        console.log('Completed orders:', orders);
+        
+        if (orders.length === 0) {
+            console.log('No completed orders found');
+            document.getElementById('tableBody').innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center">No completed orders found</td>
+                </tr>
+            `;
+        } else {
+            updateSalesStatistics();
+            filter(); // Initial filter based on default date range
+        }
+    } catch (error) {
+        console.error('Error loading orders:', error);
+        document.getElementById('tableBody').innerHTML = `
             <tr>
-                <td>${new Date(order.date).toLocaleDateString()}</td>
-                <td>${order.orderId}</td>
-                <td>${order.customer}</td>
-                <td>${order.phoneNumber}</td>
-                <td>${order.status || 'Completed'}</td>
-                <td class="text-end">₱${order.amount.toFixed(2)}</td>
+                <td colspan="6" class="text-center text-danger">Error loading orders: ${error.message}</td>
             </tr>
         `;
-        tableBody.insertAdjacentHTML('beforeend', row);
-        totalAmount += order.amount;
-    });
-
-    document.getElementById("totalAmount").textContent = `₱${totalAmount.toFixed(2)}`;
+    }
 }
 
-function updateDateRange(preset) {
-    const today = new Date();
-    let dateFrom, dateTo;
+// Setup date range listeners
+function setupDateRangeListeners() {
+    const dateFrom = document.getElementById('dateFrom');
+    const dateTo = document.getElementById('dateTo');
+    
+    dateFrom.addEventListener('change', filter);
+    dateTo.addEventListener('change', filter);
+}
 
+// Update date range based on preset selection
+function updateDateRange(preset) {
+    const dateFrom = document.getElementById('dateFrom');
+    const dateTo = document.getElementById('dateTo');
+    const today = new Date();
+    
+    // Format today's date as YYYY-MM-DD
+    const todayFormatted = formatDate(today);
+    
     switch(preset) {
         case 'today':
-            dateFrom = dateTo = today.toISOString().split('T')[0];
+            dateFrom.value = todayFormatted;
+            dateTo.value = todayFormatted;
             break;
         case 'week':
-            const weekAgo = new Date(today);
-            weekAgo.setDate(weekAgo.getDate() - 7);
-            dateFrom = weekAgo.toISOString().split('T')[0];
-            dateTo = today.toISOString().split('T')[0];
+            const weekStart = new Date(today);
+            weekStart.setDate(today.getDate() - 7);
+            dateFrom.value = formatDate(weekStart);
+            dateTo.value = todayFormatted;
             break;
         case 'month':
-            const monthAgo = new Date(today);
-            monthAgo.setMonth(monthAgo.getMonth() - 1);
-            dateFrom = monthAgo.toISOString().split('T')[0];
-            dateTo = today.toISOString().split('T')[0];
+            const monthStart = new Date(today);
+            monthStart.setDate(1);
+            dateFrom.value = formatDate(monthStart);
+            dateTo.value = todayFormatted;
             break;
         case 'custom':
-            return; // Don't update for custom range
+            // Don't change the dates, let user select
+            return;
     }
 
-    document.getElementById("dateFrom").value = dateFrom;
-    document.getElementById("dateTo").value = dateTo;
     filter();
 }
 
-function printReport() {
-    const dateFrom = document.getElementById("dateFrom").value;
-    const dateTo = document.getElementById("dateTo").value;
-    const totalAmount = document.getElementById("totalAmount").textContent;
+// Format date to YYYY-MM-DD
+function formatDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
 
-    const printWindow = window.open('', '', 'width=800,height=600');
-    printWindow.document.write(`
-        <html>
-            <head>
-                <title>Sales Report - Laundry Buddy</title>
-                <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-                <style>
-                    @media print {
-                        @page { margin: 1cm; }
-                    }
-                    .report-header { text-align: center; margin-bottom: 20px; }
-                </style>
-            </head>
-            <body>
-                <div class="report-header">
-                    <h2>Laundry Buddy</h2>
-                    <h4>Sales Report</h4>
-                    <p>Period: ${new Date(dateFrom).toLocaleDateString()} to ${new Date(dateTo).toLocaleDateString()}</p>
-                </div>
-                <div class="table-responsive">
-                    ${document.querySelector('.table-responsive').innerHTML}
-                </div>
-                <div class="mt-3">
-                    <p><strong>Total Amount: ${totalAmount}</strong></p>
-                    <p><small>Generated on: ${new Date().toLocaleString()}</small></p>
-                </div>
-            </body>
-        </html>
-    `);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
-    }, 250);
+// Filter orders based on date range
+function filter() {
+    try {
+        const dateFrom = new Date(document.getElementById('dateFrom').value);
+        const dateTo = new Date(document.getElementById('dateTo').value);
+        
+        // Set the time to start of day for dateFrom
+        dateFrom.setHours(0, 0, 0, 0);
+        
+        // Set the time to end of day for dateTo
+        dateTo.setHours(23, 59, 59, 999);
+
+        console.log('Filtering orders from', dateFrom, 'to', dateTo);
+        console.log('Available orders:', orders);
+
+        const filteredOrders = orders.filter(order => {
+            const orderDate = new Date(order.date);
+            return orderDate >= dateFrom && orderDate <= dateTo;
+        });
+
+        console.log('Filtered orders:', filteredOrders);
+        updateTable(filteredOrders);
+        updateSalesStatistics();
+    } catch (error) {
+        console.error('Error filtering orders:', error);
+        document.getElementById('tableBody').innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center text-danger">Error filtering orders: ${error.message}</td>
+            </tr>
+        `;
+    }
+}
+
+// Update the sales table
+function updateTable(filteredOrders) {
+    const tableBody = document.getElementById('tableBody');
+    let totalAmount = 0;
+
+    if (!filteredOrders || filteredOrders.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center">No orders found for the selected date range</td>
+            </tr>
+        `;
+        document.getElementById('totalAmount').innerHTML = `<strong>₱${totalAmount.toFixed(2)}</strong>`;
+        return;
+    }
+
+    tableBody.innerHTML = filteredOrders.map(order => {
+        const amount = parseFloat(order.totalAmount) || 0;
+        totalAmount += amount;
+        return `
+            <tr>
+                <td>${new Date(order.date).toLocaleDateString()}</td>
+                <td>${order.orderId || 'N/A'}</td>
+                <td>${order.customerName || 'N/A'}</td>
+                <td>${order.phoneNumber || 'N/A'}</td>
+                <td>${order.status || 'N/A'}</td>
+                <td class="text-end">₱${amount.toFixed(2)}</td>
+            </tr>
+        `;
+    }).join('');
+
+    // Update total amount
+    document.getElementById('totalAmount').innerHTML = `<strong>₱${totalAmount.toFixed(2)}</strong>`;
+}
+
+// Update sales statistics based on filtered date
+function updateSalesStatistics() {
+    try {
+        // Get the selected dates from the filter
+        const selectedDateFrom = new Date(document.getElementById('dateFrom').value);
+        const selectedDateTo = new Date(document.getElementById('dateTo').value);
+        
+        // Set proper time for the dates
+        selectedDateFrom.setHours(0, 0, 0, 0);
+        selectedDateTo.setHours(23, 59, 59, 999);
+
+        // Calculate daily sales (for the selected date)
+        const dailySales = orders
+            .filter(order => {
+                const orderDate = new Date(order.date);
+                orderDate.setHours(0, 0, 0, 0);
+                return orderDate >= selectedDateFrom && orderDate <= selectedDateTo;
+            })
+            .reduce((sum, order) => sum + parseFloat(order.totalAmount || 0), 0);
+
+        // Calculate weekly sales (7 days before the selected date)
+        const weekStart = new Date(selectedDateFrom);
+        weekStart.setDate(selectedDateFrom.getDate() - 6); // Include the selected date
+        const weeklySales = orders
+            .filter(order => {
+                const orderDate = new Date(order.date);
+                return orderDate >= weekStart && orderDate <= selectedDateTo;
+            })
+            .reduce((sum, order) => sum + parseFloat(order.totalAmount || 0), 0);
+
+        // Calculate monthly sales (from the 1st of the month of the selected date)
+        const monthStart = new Date(selectedDateFrom.getFullYear(), selectedDateFrom.getMonth(), 1);
+        const monthEnd = new Date(selectedDateTo.getFullYear(), selectedDateTo.getMonth() + 1, 0, 23, 59, 59, 999);
+        const monthlySales = orders
+            .filter(order => {
+                const orderDate = new Date(order.date);
+                return orderDate >= monthStart && orderDate <= monthEnd;
+            })
+            .reduce((sum, order) => sum + parseFloat(order.totalAmount || 0), 0);
+
+        // Count total orders for the selected period
+        const totalFilteredOrders = orders.filter(order => {
+            const orderDate = new Date(order.date);
+            return orderDate >= selectedDateFrom && orderDate <= selectedDateTo;
+        }).length;
+
+        console.log('Sales Statistics:', {
+            daily: dailySales,
+            weekly: weeklySales,
+            monthly: monthlySales,
+            filteredOrders: totalFilteredOrders,
+            dateRange: {
+                from: selectedDateFrom,
+                to: selectedDateTo,
+                weekStart: weekStart,
+                monthStart: monthStart,
+                monthEnd: monthEnd
+            }
+        });
+
+        // Update the UI
+        document.getElementById('todaySales').textContent = `₱${dailySales.toFixed(2)}`;
+        document.getElementById('weeklySales').textContent = `₱${weeklySales.toFixed(2)}`;
+        document.getElementById('monthlySales').textContent = `₱${monthlySales.toFixed(2)}`;
+        document.getElementById('totalOrders').textContent = totalFilteredOrders;
+    } catch (error) {
+        console.error('Error updating sales statistics:', error);
+        // Set default values in case of error
+        document.getElementById('todaySales').textContent = '₱0.00';
+        document.getElementById('weeklySales').textContent = '₱0.00';
+        document.getElementById('monthlySales').textContent = '₱0.00';
+        document.getElementById('totalOrders').textContent = '0';
+    }
+}
+
+// Function to print the report
+function printReport() {
+    const printContent = document.querySelector('main').innerHTML;
+    const originalContent = document.body.innerHTML;
+
+    document.body.innerHTML = `
+        <div class="container mt-4">
+            <div class="text-center mb-4">
+                <h2>Laundry Sales Report</h2>
+                <p class="text-muted">Generated on: ${new Date().toLocaleString()}</p>
+            </div>
+            ${printContent}
+        </div>
+    `;
+
+    window.print();
+    document.body.innerHTML = originalContent;
+
+    // Reinitialize event listeners
+    document.addEventListener('DOMContentLoaded', async function() {
+        await loadOrders();
+        setupDateRangeListeners();
+        updateDateRange('today');
+    });
 }

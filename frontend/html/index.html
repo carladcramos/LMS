@@ -8,6 +8,55 @@
     <link rel="stylesheet" href="../css/sidebar.css">
     <link rel="stylesheet" href="/frontend/css/index.css">
 
+    <style>
+        /* Add these styles to prevent scrolling */
+        body {
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .container-fluid {
+            height: 100%;
+        }
+
+        .row {
+            height: 100%;
+        }
+
+        main {
+            height: 100%;
+            overflow-y: auto;
+            padding: 1.5rem !important;
+        }
+
+        /* Adjust spacing for content */
+        .dashboard-header {
+            margin-bottom: 1rem;
+        }
+
+        section {
+            margin-bottom: 1rem !important;
+        }
+
+        .card {
+            height: 100%;
+        }
+
+        /* Adjust text sizes for better fit */
+        .h4 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-subtitle {
+            font-size: 0.9rem;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+        }
+    </style>
+
 </head>
 <body>
     <div class="container-fluid">
@@ -45,34 +94,81 @@
             </div>
 
             <!-- Main Content -->
-            <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
-                <div class="pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="dashboard-title">Dashboard</h1>
+            <main role="main" class="col-md-9 ml-sm-auto col-lg-10">
+                <!-- Dashboard Header -->
+                <div class="dashboard-header border-bottom">
+                    <h1 class="h3">Dashboard</h1>
+                    <p class="text-muted small mb-0">Overview of your laundry business performance</p>
                 </div>
 
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="card">
-                            <div class="card-header">Total Profit Today</div>
-                            <div class="card-body">
-                                <h2>100</h2>
+                <!-- Today's Overview Section -->
+                <section>
+                    <h2 class="h4">Today's Overview</h2>
+                    <div class="row g-2">
+                        <div class="col-md-3">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-2">Today's Sales</h6>
+                                    <h3 class="card-title mb-0" id="todaySales">₱0.00</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-2">In Progress</h6>
+                                    <h3 class="card-title mb-0" id="inProgressCount">0</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-2">Completed Today</h6>
+                                    <h3 class="card-title mb-0" id="completedTodayCount">0</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-2">Total Orders</h6>
+                                    <h3 class="card-title mb-0" id="totalOrders">0</h3>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="card">
-                            <div class="card-header">Total Customer Today</div>
-                            <div class="card-body">
-                                <h2>100</h2>
+                </section>
+                <!-- Inventory Status Section -->
+                <section>
+                    <h2 class="h4">Inventory Status</h2>
+                    <div class="row g-2">
+                        <div class="col-md-3">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-2">Total Items</h6>
+                                    <h3 class="card-title mb-0" id="totalItems">0</h3>
+                                    <small class="text-white-50">All supplies in stock</small>
+                                </div>
                             </div>
                         </div>
+                        <div class="col-md-3">
+                            <div class="card bg-warning text-white">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-2">Low Stock Items</h6>
+                                    <h3 class="card-title mb-0" id="lowStockItems">0</h3>
+                                    <small class="text-white-50">Below minimum threshold</small>
+                                </div>
+                            </div>
+                        </div>
+                    
                     </div>
-                </div>
+                </section>
             </main>
         </div>
     </div>
 
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/index.js"></script>
 </body>
 </html>

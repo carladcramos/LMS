@@ -1,243 +1,112 @@
-// Initialize orders and currentOrder
+// Initialize orders array
 let orders = [];
 let currentOrder = null;
 
-// Load sample orders and set up event listeners when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    loadSampleOrders();
-    setupEventListeners();
-    updateStatistics();
-    
-    // Add modal reset on close
-    const newOrderModal = document.getElementById('newOrderModal');
-    newOrderModal.addEventListener('hidden.bs.modal', resetModal);
+// Load orders from API when page loads
+document.addEventListener('DOMContentLoaded', async function() {
+    try {
+        await loadOrders();
+        setupEventListeners();
+        updateStatistics();
+        
+        // Add modal reset on close
+        const newOrderModal = document.getElementById('newOrderModal');
+        newOrderModal?.addEventListener('hidden.bs.modal', resetModal);
+    } catch (error) {
+        console.error('Error initializing page:', error);
+        showToast('Error loading page', 'error');
+    }
 });
 
-function setupEventListeners() {
-    // Laundry form submission
-    const laundryForm = document.getElementById('laundryForm');
-    if (laundryForm) {
-        laundryForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            addLaundryItem();
-        });
-    }
-
-    // Add search input event listener
-    const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-        searchInput.addEventListener('input', filterOrders);
-    }
-
-    // Add status filter event listener
-    const statusFilter = document.getElementById('statusFilter');
-    if (statusFilter) {
-        statusFilter.addEventListener('change', filterOrders);
-    }
-}
-
-function loadSampleOrders() {
-    orders = [
-        {
-            orderId: 'JB240315-001',
-            customerName: 'John Smith',
-            phoneNumber: '09123456789',
-            totalAmount: 350.00,
-            status: 'Pending',
-            date: new Date('2024-03-15'),
-            items: [
-                {
-                    category: 'Regular',
-                    weight: 2,
-                    unitPrice: 175,
-                    amount: 350
-                }
-            ]
-        },
-        {
-            orderId: 'JB240315-002',
-            customerName: 'Maria Garcia',
-            phoneNumber: '09187654321',
-            totalAmount: 525.00,
-            status: 'In Progress',
-            date: new Date('2024-03-15'),
-            items: [
-                {
-                    category: 'Assorted',
-                    weight: 3,
-                    unitPrice: 175,
-                    amount: 525
-                }
-            ]
+// Function to load orders from API
+async function loadOrders() {
+    try {
+        const response = await fetch('http://localhost:4000/api/laundry');
+        if (!response.ok) {
+            throw new Error('Failed to fetch orders');
         }
-    ];
-    updateMainTable();
-    updateStatistics();
-}
-
-function calculatePrice(category, weight) {
-    const baseUnitPrice = 175;
-    const additionalFeePerKilo = 20;
-    let totalAmount = baseUnitPrice;
-    
-    // If weight is over 8kg, add additional fee for each kg over 8
-    if (weight > 8) {
-        const extraKilos = weight - 8;
-        const additionalFee = extraKilos * additionalFeePerKilo;
-        totalAmount += additionalFee;
-    }
-    
-    return totalAmount;
-}
-
-function addLaundryItem() {
-    const customerName = document.getElementById('customerName').value;
-    const phoneNumber = document.getElementById('phoneNumber').value;
-
-    // Validate customer information
-    if (!customerName || !phoneNumber) {
-        alert('Please fill in customer information first');
-        return;
-    }
-
-    const category = document.getElementById('category').value;
-    const weight = parseFloat(document.getElementById('weight').value);
-
-    // Validate laundry item information
-    if (!category || !weight) {
-        alert('Please fill in all fields');
-        return;
-    }
-
-    // Validate weight is positive
-    if (weight <= 0) {
-        alert('Weight must be greater than 4 kg');
-        return;
-    }
-
-    // Calculate price with additional fee if applicable
-    const unitPrice = 175;
-    const amount = calculatePrice(category, weight);
-    const additionalFee = weight > 8 ? (weight - 8) * 20 : 0;
-
-    // Initialize current order if it doesn't exist
-    if (!currentOrder) {
-        currentOrder = {
-            orderId: generateOrderId(),
-            customerName: customerName,
-            phoneNumber: phoneNumber,
-            items: [],
-            totalAmount: 0,
-            status: 'Pending',
-            date: new Date()
-        };
-    }
-
-    // Add item to current order
-    currentOrder.items.push({
-        category,
-        weight,
-        unitPrice,
-        amount,
-        additionalFee
-    });
-
-    // Update total
-    currentOrder.totalAmount = currentOrder.items.reduce((sum, item) => sum + item.amount, 0);
-
-    // Update the order summary table
-    updateOrderSummary();
-
-    // Reset the laundry form fields
-    document.getElementById('laundryForm').reset();
-}
-
-function updateOrderSummary() {
-    const tableBody = document.getElementById('orderTableBody');
-    if (!tableBody) return;
-    
-    tableBody.innerHTML = '';
-
-    if (currentOrder && currentOrder.items) {
-        currentOrder.items.forEach((item, index) => {
-            const additionalFeeText = item.weight > 8 ? 
-                `<br><small class="text-muted">(Includes ₱${(item.weight - 8) * 20} additional fee)</small>` : '';
-            
-            const row = `
-                <tr>
-                    <td>${item.category}</td>
-                    <td>${item.weight} kg</td>
-                    <td>₱${item.unitPrice.toFixed(2)}</td>
-                    <td>₱${item.amount.toFixed(2)}${additionalFeeText}</td>
-                    <td>
-                        <button class="btn btn-danger btn-sm" onclick="removeItem(${index})">Remove</button>
-                    </td>
-                </tr>
-            `;
-            tableBody.insertAdjacentHTML('beforeend', row);
-        });
-    }
-
-    // Update total amount display
-    const totalAmountElement = document.getElementById('totalAmount');
-    if (totalAmountElement) {
-        totalAmountElement.textContent = `₱${currentOrder ? currentOrder.totalAmount.toFixed(2) : '0.00'}`;
-    }
-
-    // Show/hide complete order button
-    const completeOrderBtn = document.getElementById('completeOrderBtn');
-    if (completeOrderBtn) {
-        completeOrderBtn.style.display = currentOrder && currentOrder.items.length > 0 ? 'block' : 'none';
+        orders = await response.json();
+        
+        // Sort orders by date in descending order (most recent first)
+        orders.sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        updateMainTable();
+        updateStatistics();
+    } catch (error) {
+        console.error('Error loading orders:', error);
+        showToast('Error loading orders', 'error');
     }
 }
 
-function removeItem(index) {
-    if (!currentOrder || !currentOrder.items) return;
-    
-    currentOrder.items.splice(index, 1);
-    currentOrder.totalAmount = currentOrder.items.reduce((sum, item) => sum + item.amount, 0);
-    updateOrderSummary();
-    
-    // Hide complete order button if no items
-    document.getElementById('completeOrderBtn').style.display = 
-        currentOrder.items.length > 0 ? 'block' : 'none';
-}
-
-function completeOrder() {
+// Modify the completeOrder function
+async function completeOrder() {
     if (!currentOrder || !currentOrder.items.length) {
-        alert('Please add at least one item to the order');
+        showToast('Please add at least one item to the order', 'error');
         return;
     }
 
-    // Add to completedOrders in localStorage
-    const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
-    completedOrders.push({
-        date: currentOrder.date,
-        orderId: currentOrder.orderId,
-        customer: currentOrder.customerName,
-        phoneNumber: currentOrder.phoneNumber,
-        amount: currentOrder.totalAmount
-    });
-    localStorage.setItem('completedOrders', JSON.stringify(completedOrders));
+    try {
+        const orderData = {
+            customerName: currentOrder.customerName,
+            phoneNumber: currentOrder.phoneNumber,
+            totalAmount: parseFloat(currentOrder.totalAmount),
+            status: 'Pending',
+            items: currentOrder.items,
+            date: new Date().toISOString()
+        };
 
-    // Add order to the list
-    orders.push({...currentOrder});
-    
-    // Update main table
-    updateMainTable();
-    
-    // Show receipt
-    showReceipt();
-    
-    // Reset current order and close modal
-    resetModal();
-    const modal = bootstrap.Modal.getInstance(document.getElementById('newOrderModal'));
-    if (modal) {
-        modal.hide();
+        console.log('Sending order data:', orderData);
+
+        const response = await fetch('http://localhost:4000/api/laundry', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(orderData)
+        });
+
+        const responseText = await response.text();
+        console.log('Raw response:', responseText);
+
+        if (!response.ok) {
+            throw new Error(`Failed to create order: ${responseText}`);
+        }
+
+        const savedOrder = JSON.parse(responseText);
+        console.log('Saved order:', savedOrder);
+
+        // Add new order to the beginning of the array instead of pushing to the end
+        orders.unshift(savedOrder);
+        
+        updateMainTable();
+        updateStatistics();
+        
+        resetModal();
+        const modal = bootstrap.Modal.getInstance(document.getElementById('newOrderModal'));
+        if (modal) {
+            modal.hide();
+        }
+
+        showToast('Order created successfully!', 'success');
+    } catch (error) {
+        console.error('Error creating order:', error);
+        showToast('Error creating order: ' + error.message, 'error');
     }
-    updateStatistics();
 }
 
+// Add this helper function to reset the modal
+function resetModal() {
+    currentOrder = null;
+    document.getElementById('customerName').value = '';
+    document.getElementById('phoneNumber').value = '';
+    document.getElementById('category').value = '';
+    document.getElementById('weight').value = '';
+    document.getElementById('orderTableBody').innerHTML = '';
+    document.getElementById('totalAmount').textContent = '₱0.00';
+}
+
+// Update the updateMainTable function to handle API data format
 function updateMainTable(ordersToShow = orders) {
     const tableBody = document.getElementById('mainTableBody');
     if (!tableBody) return;
@@ -245,6 +114,17 @@ function updateMainTable(ordersToShow = orders) {
     tableBody.innerHTML = '';
 
     ordersToShow.forEach(order => {
+        // Format the date and time
+        const orderDate = new Date(order.date);
+        const formattedDateTime = orderDate.toLocaleString('en-US', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+
         const row = `
             <tr>
                 <td>${order.orderId}</td>
@@ -252,18 +132,18 @@ function updateMainTable(ordersToShow = orders) {
                 <td>${order.phoneNumber}</td>
                 <td>₱${order.totalAmount.toFixed(2)}</td>
                 <td>
-                    <select class="form-select form-select-sm" onchange="updateStatus('${order.orderId}', this.value)">
+                    <select class="form-select form-select-sm" onchange="updateStatus('${order._id}', this.value)">
                         <option value="Pending" ${order.status === 'Pending' ? 'selected' : ''}>Pending</option>
                         <option value="In Progress" ${order.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
                         <option value="Completed" ${order.status === 'Completed' ? 'selected' : ''}>Completed</option>
                     </select>
                 </td>
-                <td>${new Date(order.date).toLocaleDateString()}</td>
+                <td>${formattedDateTime}</td>
                 <td>
-                    <button class="btn btn-info btn-sm me-1" onclick="viewOrder('${order.orderId}')">
+                    <button class="btn btn-info btn-sm me-1" onclick="viewOrder('${order._id}')">
                         View
                     </button>
-                    <button class="btn btn-danger btn-sm" onclick="deleteOrder('${order.orderId}')">
+                    <button class="btn btn-danger btn-sm" onclick="deleteOrder('${order._id}')">
                         Delete
                     </button>
                 </td>
@@ -273,443 +153,94 @@ function updateMainTable(ordersToShow = orders) {
     });
 }
 
-async function updateStatus(orderId, newStatus) {
-    const order = orders.find(o => o.orderId === orderId);
-    if (!order) return;
-
-    // Don't show confirmation if status hasn't changed
-    if (order.status === newStatus) return;
-
-    // Prepare modal content based on status
-    let modalContent = {
-        title: 'Update Order Status',
-        body: '',
-        icon: '',
-        confirmButtonText: 'Confirm'
-    };
-
-    switch (newStatus) {
-        case 'In Progress':
-            modalContent = {
-                title: 'Start Processing Order',
-                body: `<div class="text-center">
-                    <i class="fas fa-spinner fa-spin fa-3x text-primary mb-3"></i>
-                    <p>You are about to start processing order <strong>${orderId}</strong>.</p>
-                    <p class="text-muted">This indicates that the laundry items are now being washed/dried.</p>
-                </div>`,
-                confirmButtonText: 'Start Processing'
-            };
-            break;
-        case 'Completed':
-            modalContent = {
-                title: 'Complete Order',
-                body: `<div class="text-center">
-                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
-                    <p>Are you sure this order is ready for pickup?</p>
-                    <div class="alert alert-info">
-                        <strong>Order Details:</strong><br>
-                        Customer: ${order.customerName}<br>
-                        Amount: ₱${order.totalAmount.toFixed(2)}
-                    </div>
-                    <p class="text-muted">This will mark the order as paid and completed.</p>
-                </div>`,
-                confirmButtonText: 'Complete Order'
-            };
-            break;
-        case 'Pending':
-            modalContent = {
-                title: 'Revert to Pending',
-                body: `<div class="text-center">
-                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
-                    <p>Are you sure you want to mark this order as pending?</p>
-                    <p class="text-muted">This will return the order to the queue.</p>
-                </div>`,
-                confirmButtonText: 'Mark as Pending'
-            };
-            break;
-    }
-
-    // Create and show modal
-    const modalHtml = `
-        <div class="modal fade" id="statusConfirmModal" tabindex="-1">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">${modalContent.title}</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        ${modalContent.body}
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-primary" id="confirmStatusBtn">
-                            ${modalContent.confirmButtonText}
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-
-    // Remove existing modal if any
-    const existingModal = document.getElementById('statusConfirmModal');
-    if (existingModal) {
-        existingModal.remove();
-    }
-
-    // Add modal to document
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
-
-    // Get modal instance
-    const modalElement = document.getElementById('statusConfirmModal');
-    const modal = new bootstrap.Modal(modalElement);
-
-    // Handle confirmation
-    return new Promise((resolve) => {
-        const confirmBtn = document.getElementById('confirmStatusBtn');
-        confirmBtn.addEventListener('click', async () => {
-            try {
-                order.status = newStatus;
-                updateStatistics();
-
-                if (newStatus === 'Completed') {
-                    // Save to completed orders
-                    const completedOrders = JSON.parse(localStorage.getItem('completedOrders') || '[]');
-                    completedOrders.push({
-                        date: order.date,
-                        orderId: order.orderId,
-                        customer: order.customerName,
-                        phoneNumber: order.phoneNumber,
-                        amount: order.totalAmount,
-                        status: 'Completed'
-                    });
-                    localStorage.setItem('completedOrders', JSON.stringify(completedOrders));
-
-                    modal.hide();
-                    // Show success message before redirecting
-                    showToast('Order completed successfully!', 'success');
-                    setTimeout(() => {
-                        window.location.href = 'report.html';
-                    }, 1500);
-                } else {
-                    modal.hide();
-                    showToast(`Order status updated to ${newStatus}`, 'success');
-                }
-            } catch (err) {
-                console.error('Error updating status:', err);
-                showToast('Error updating order status', 'error');
-                // Reset select element
-                const selectElement = document.querySelector(`select[onchange="updateStatus('${orderId}', this.value)"]`);
-                if (selectElement) {
-                    selectElement.value = order.status;
-                }
-            }
-        });
-
-        // Handle modal dismiss
-        modalElement.addEventListener('hidden.bs.modal', () => {
-            const selectElement = document.querySelector(`select[onchange="updateStatus('${orderId}', this.value)"]`);
-            if (selectElement) {
-                selectElement.value = order.status;
-            }
-            modalElement.remove();
-        });
-
-        modal.show();
-    });
-}
-
-// Add this helper function for showing toasts
-function showToast(message, type = 'info') {
-    const toastHtml = `
-        <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
-            <div class="toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'}" role="alert">
-                <div class="d-flex">
-                    <div class="toast-body">
-                        ${message}
-                    </div>
-                    <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button>
-                </div>
-            </div>
-        </div>
-    `;
-
-    document.body.insertAdjacentHTML('beforeend', toastHtml);
-    const toastElement = document.querySelector('.toast');
-    const toast = new bootstrap.Toast(toastElement, { delay: 3000 });
-    toast.show();
-
-    // Remove toast after it's hidden
-    toastElement.addEventListener('hidden.bs.toast', () => {
-        toastElement.remove();
-    });
-}
-
-function viewOrder(orderId) {
-    const order = orders.find(o => o.orderId === orderId);
-    if (!order) return;
-
-    const viewContent = `
-        <div class="container">
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <h6>Order Information</h6>
-                    <p><strong>Order ID:</strong> ${order.orderId}</p>
-                    <p><strong>Date:</strong> ${new Date(order.date).toLocaleString()}</p>
-                    <p><strong>Status:</strong> ${order.status}</p>
-                </div>
-                <div class="col-md-6">
-                    <h6>Customer Information</h6>
-                    <p><strong>Name:</strong> ${order.customerName}</p>
-                    <p><strong>Phone:</strong> ${order.phoneNumber}</p>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-12">
-                    <h6>Order Items</h6>
-                    <table class="table table-bordered">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Category</th>
-                                <th>Weight (kg)</th>
-                                <th>Unit Price</th>
-        
-                                <th>Additional Fee</th>
-                                <th>Total Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${order.items.map(item => {
-                               
-                                const additionalFee = item.weight > 8 ? (item.weight - 8) * 20 : 0;
-                                return `
-                                    <tr>
-                                        <td>${item.category}</td>
-                                        <td>${item.weight}</td>
-                                        <td>₱${item.unitPrice.toFixed(2)}</td>
-
-                                        <td>${additionalFee > 0 ? `₱${additionalFee.toFixed(2)}` : '-'}</td>
-                                        <td>₱${item.amount.toFixed(2)}</td>
-                                    </tr>
-                                `;
-                            }).join('')}
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <td colspan="4" class="text-end"><strong>Total Amount:</strong></td>
-                                <td><strong>₱${order.totalAmount.toFixed(2)}</strong></td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
-
-            <div class="row mt-3">
-                <div class="col-12">
-                    <div class="alert alert-info">
-                        <small>
-                            <strong>Note:</strong> Additional fee of ₱20 per kilogram applies for weights exceeding 8kg.
-                        </small>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-
-    // Insert content and show modal
-    document.getElementById('viewOrderContent').innerHTML = viewContent;
-    new bootstrap.Modal(document.getElementById('viewOrderModal')).show();
-}
-
-function printViewOrder() {
-    const printWindow = window.open('', '', 'width=800,height=600');
-    printWindow.document.write(`
-        <html>
-            <head>
-                <title>Order Details</title>
-                <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-                <style>
-                    @media print {
-                        .modal-footer { display: none !important; }
-                        .alert { border: 1px solid #ccc !important; }
-                    }
-                    body { padding: 20px; }
-                </style>
-            </head>
-            <body>
-                ${document.getElementById('viewOrderContent').innerHTML}
-            </body>
-        </html>
-    `);
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
-    printWindow.close();
-}
-
-function deleteOrder(orderId) {
+// Update the deleteOrder function to use API
+async function deleteOrder(orderId) {
     if (confirm('Are you sure you want to delete this order?')) {
-        orders = orders.filter(o => o.orderId !== orderId);
+        try {
+            console.log('Attempting to delete order:', orderId); // Debug log
+
+            const response = await fetch(`http://localhost:4000/api/laundry/${orderId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            // Log the raw response for debugging
+            const responseText = await response.text();
+            console.log('Delete response:', responseText);
+
+            if (!response.ok) {
+                throw new Error(`Server responded with ${response.status}: ${responseText}`);
+            }
+
+            // Try to parse the response as JSON if it's not empty
+            const result = responseText ? JSON.parse(responseText) : {};
+
+            // Remove the order from the local array
+            orders = orders.filter(o => o._id !== orderId);
+            
+            // Update the UI
+            updateMainTable();
+            updateStatistics();
+            
+            showToast('Order deleted successfully', 'success');
+        } catch (error) {
+            console.error('Error deleting order:', error);
+            showToast('Error deleting order', 'error');
+        }
+    }
+}
+
+// Update the updateStatus function to use API
+async function updateStatus(orderId, newStatus) {
+    try {
+        console.log(`Updating order ${orderId} to status ${newStatus}`);
+
+        const url = `http://localhost:4000/api/laundry/${orderId}`;
+        console.log('Request URL:', url);
+
+        const response = await fetch(url, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ status: newStatus })
+        });
+
+        // Log the raw response for debugging
+        const responseText = await response.text();
+        console.log('Raw response:', responseText);
+
+        if (!response.ok) {
+            throw new Error(`Server responded with ${response.status}: ${responseText}`);
+        }
+
+        // Parse the response as JSON
+        const updatedOrder = JSON.parse(responseText);
+        
+        const orderIndex = orders.findIndex(o => o._id === orderId);
+        if (orderIndex !== -1) {
+            orders[orderIndex] = updatedOrder;
+        }
+
         updateMainTable();
         updateStatistics();
+        showToast(`Order status updated to ${newStatus}`, 'success');
+    } catch (error) {
+        console.error('Error updating status:', error);
+        showToast('Error updating order status', 'error');
     }
 }
 
-function generateOrderId() {
-    const date = new Date();
-    const year = date.getFullYear().toString().slice(-2);
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    return `JB${year}${month}${day}-${random}`;
-}
+// Keep other existing functions but update them to work with the API data format
+// ... (rest of your existing code)   
 
-function showReceipt(order = currentOrder) {
-    if (!order) return;
-
-    const receiptContent = `
-        <div class="text-center mb-4">
-            <h4>Laundry Buddy</h4>
-            <p class="mb-0">Order Receipt</p>
-            <small class="text-muted">Date: ${order.date.toLocaleString()}</small>
-        </div>
-        <div class="mb-3">
-            <p><strong>Order ID:</strong> ${order.orderId}</p>
-            <p><strong>Customer:</strong> ${order.customerName}</p>
-            <p><strong>Phone:</strong> ${order.phoneNumber}</p>
-        </div>
-        <table class="table table-sm">
-            <thead>
-                <tr>
-                    <th>Item</th>
-                    <th>Weight</th>
-                    <th>Unit Price</th>
-                    <th>Amount</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${order.items.map(item => `
-                    <tr>
-                        <td>${item.category}</td>
-                        <td>${item.weight} kg</td>
-                        <td>₱${item.unitPrice.toFixed(2)}</td>
-                        <td>₱${item.amount.toFixed(2)}</td>
-                    </tr>
-                `).join('')}
-            </tbody>
-            <tfoot>
-                <tr>
-                    <td colspan="3" class="text-end"><strong>Total Amount:</strong></td>
-                    <td><strong>₱${order.totalAmount.toFixed(2)}</strong></td>
-                </tr>
-            </tfoot>
-        </table>
-        <div class="text-center mt-4">
-            <p>Thank you for choosing Laundry Buddy!</p>
-            <button class="btn btn-primary" onclick="printReceipt()">Print Receipt</button>
-        </div>
-    `;
-
-    const receiptContentElement = document.getElementById('receiptContent');
-    if (receiptContentElement) {
-        receiptContentElement.innerHTML = receiptContent;
-        new bootstrap.Modal(document.getElementById('receiptModal')).show();
-    }
-}
-
-function printReceipt() {
-    const printWindow = window.open('', '', 'width=600,height=600');
-    printWindow.document.write(`
-        <html>
-            <head>
-                <title>Order Receipt</title>
-                <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-            </head>
-            <body>
-                ${document.getElementById('receiptContent').innerHTML}
-            </body>
-        </html>
-    `);
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
-    printWindow.close();
-}
-
-// Add this function to reset the modal when it's closed
-function resetModal() {
-    currentOrder = null;
-    const tableBody = document.getElementById('orderTableBody');
-    if (tableBody) tableBody.innerHTML = '';
-    
-    const totalAmountElement = document.getElementById('totalAmount');
-    if (totalAmountElement) totalAmountElement.textContent = '₱0.00';
-    
-    const customerForm = document.getElementById('customerForm');
-    if (customerForm) customerForm.reset();
-    
-    const laundryForm = document.getElementById('laundryForm');
-    if (laundryForm) laundryForm.reset();
-}
-
-function printViewOrder() {
-    const printWindow = window.open('', '', 'width=600,height=600');
-    printWindow.document.write(`
-        <html>
-            <head>
-                <title>Order Details</title>
-                <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-                <style>
-                    @media print {
-                        .modal-footer { display: none !important; }
-                    }
-                </style>
-            </head>
-            <body>
-                ${document.getElementById('viewOrderContent').innerHTML}
-            </body>
-        </html>
-    `);
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
-    printWindow.close();
-}
-
-function filterOrders() {
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    const statusFilter = document.getElementById('statusFilter').value;
-    
-    const filteredOrders = orders.filter(order => {
-        const matchesSearch = 
-            order.orderId.toLowerCase().includes(searchTerm) ||
-            order.customerName.toLowerCase().includes(searchTerm) ||
-            order.phoneNumber.includes(searchTerm);
-            
-        const matchesStatus = 
-            !statusFilter || 
-            order.status === statusFilter;
-            
-        return matchesSearch && matchesStatus;
-    });
-    
-    updateMainTable(filteredOrders);
-}
-
-function resetFilters() {
-    document.getElementById('searchInput').value = '';
-    document.getElementById('statusFilter').value = '';
-    updateMainTable(orders);
-}
-
-// Add this function to update all statistics
 function updateStatistics() {
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Set to start of today
+    today.setHours(0, 0, 0, 0);
 
-    // Filter orders for different statistics
     const pendingOrders = orders.filter(order => order.status === 'Pending');
     const inProgressOrders = orders.filter(order => order.status === 'In Progress');
     const completedTodayOrders = orders.filter(order => {
@@ -718,12 +249,282 @@ function updateStatistics() {
         return order.status === 'Completed' && orderDate.getTime() === today.getTime();
     });
 
-    // Calculate today's revenue from completed orders
     const todayRevenue = completedTodayOrders.reduce((sum, order) => sum + order.totalAmount, 0);
 
-    // Update the statistics cards
     document.getElementById('pendingCount').textContent = pendingOrders.length;
     document.getElementById('inProgressCount').textContent = inProgressOrders.length;
     document.getElementById('completedTodayCount').textContent = completedTodayOrders.length;
     document.getElementById('todayRevenue').textContent = `₱${todayRevenue.toFixed(2)}`;
-}   
+}
+
+// Add this toast function at the top of your file
+function showToast(message, type = 'info') {
+    // Basic alert for now - you can enhance this later
+    alert(message);
+}
+
+// Add this function near the top of your file
+function setupEventListeners() {
+    // Set up search functionality
+    document.getElementById('searchInput')?.addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const filteredOrders = orders.filter(order => 
+            order.orderId.toLowerCase().includes(searchTerm) ||
+            order.customerName.toLowerCase().includes(searchTerm)
+        );
+        updateMainTable(filteredOrders);
+    });
+
+    // Set up status filter
+    document.getElementById('statusFilter')?.addEventListener('change', function(e) {
+        const status = e.target.value;
+        const filteredOrders = status ? 
+            orders.filter(order => order.status === status) : 
+            orders;
+        updateMainTable(filteredOrders);
+    });
+
+    // Set up laundry form submission
+    document.getElementById('laundryForm')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+        addItemToOrder();
+    });
+}
+
+// Update the viewOrder function to properly handle and display items
+async function viewOrder(orderId) {
+    try {
+        const order = orders.find(o => o._id === orderId);
+        if (!order) {
+            showToast('Order not found', 'error');
+            return;
+        }
+
+        console.log('Viewing order:', order);
+
+        const modalContent = document.getElementById('viewOrderContent');
+        if (!modalContent) {
+            throw new Error('View order modal content element not found');
+        }
+
+        // Handle both old and new order formats
+        let itemsToDisplay = [];
+        if (order.items && Array.isArray(order.items)) {
+            itemsToDisplay = order.items;
+        } else if (order.category && order.weight) {
+            // Handle old format
+            itemsToDisplay = [{
+                category: order.category,
+                weight: order.weight,
+                unitPrice: 175,
+                additionalFee: order.weight > 8 ? (order.weight - 8) * 20 : 0,
+                amount: order.totalAmount
+            }];
+        }
+
+        const itemsHtml = itemsToDisplay.length > 0 ? itemsToDisplay.map(item => {
+            const weight = parseFloat(item.weight) || 0;
+            const unitPrice = parseFloat(item.unitPrice) || 175;
+            const additionalFee = parseFloat(item.additionalFee) || 0;
+            const amount = parseFloat(item.amount) || 0;
+            
+            return `
+                <tr>
+                    <td>${item.category || 'N/A'}</td>
+                    <td>${weight.toFixed(2)}</td>
+                    <td>₱${unitPrice.toFixed(2)}</td>
+                    <td>${additionalFee > 0 ? `₱${additionalFee.toFixed(2)}` : '-'}</td>
+                    <td>₱${amount.toFixed(2)}</td>
+                </tr>
+            `;
+        }).join('') : '<tr><td colspan="5" class="text-center">No items found</td></tr>';
+
+        modalContent.innerHTML = `
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0">Order Details</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p><strong>Order ID:</strong> ${order.orderId || 'N/A'}</p>
+                            <p><strong>Customer Name:</strong> ${order.customerName || 'N/A'}</p>
+                            <p><strong>Phone Number:</strong> ${order.phoneNumber || 'N/A'}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Date:</strong> ${order.date ? new Date(order.date).toLocaleString() : 'N/A'}</p>
+                            <p><strong>Status:</strong> ${order.status || 'N/A'}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Category</th>
+                                    <th>Weight (kg)</th>
+                                    <th>Unit Price</th>
+                                    <th>Additional Fee</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${itemsHtml}
+                                <tr class="table-light">
+                                    <td colspan="4" class="text-end"><strong>Total Amount:</strong></td>
+                                    <td><strong>₱${(order.totalAmount || 0).toFixed(2)}</strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const viewOrderModal = document.getElementById('viewOrderModal');
+        if (!viewOrderModal) {
+            throw new Error('View order modal element not found');
+        }
+        
+        const modal = new bootstrap.Modal(viewOrderModal);
+        modal.show();
+    } catch (error) {
+        console.error('Error viewing order:', error);
+        showToast(`Error viewing order details: ${error.message}`, 'error');
+    }
+}
+
+// Add this function to handle printing the view modal
+function printViewOrder() {
+    const printContent = document.getElementById('viewOrderContent').innerHTML;
+    const originalContent = document.body.innerHTML;
+
+    document.body.innerHTML = `
+        <div class="container mt-4">
+            <div class="text-center mb-4">
+                <h2>Laundry Order Details</h2>
+                <p class="text-muted">Print Date: ${new Date().toLocaleString()}</p>
+            </div>
+            ${printContent}
+            <div class="mt-4">
+                <p class="text-center">Thank you for your business!</p>
+            </div>
+        </div>
+    `;
+
+    window.print();
+    document.body.innerHTML = originalContent;
+
+    // Reinitialize event listeners after restoring content
+    setupEventListeners();
+    
+    // Reattach Bootstrap modal functionality
+    const viewOrderModal = new bootstrap.Modal(document.getElementById('viewOrderModal'));
+    viewOrderModal.show();
+}
+
+function addItemToOrder() {
+    const customerName = document.getElementById('customerName').value;
+    const phoneNumber = document.getElementById('phoneNumber').value;
+    const category = document.getElementById('category').value;
+    const weight = parseFloat(document.getElementById('weight').value);
+    const baseUnitPrice = 175; // Base price per kg
+    const surchargeThreshold = 8; // kg
+    const surchargeAmount = 20; // Amount per kg over threshold
+    
+    if (!customerName || !phoneNumber || !category || !weight) {
+        showToast('Please fill in all fields', 'error');
+        return;
+    }
+
+    // Calculate surcharge for weight over threshold
+    const extraKilos = Math.max(0, weight - surchargeThreshold);
+    const surcharge = extraKilos * surchargeAmount;
+    const amount = (baseUnitPrice) + surcharge;
+
+    const item = {
+        category: category,
+        weight: weight,
+        unitPrice: baseUnitPrice,
+        additionalFee: surcharge,
+        amount: amount
+    };
+
+    if (!currentOrder) {
+        currentOrder = {
+            customerName,
+            phoneNumber,
+            items: [],
+            totalAmount: 0,
+            date: new Date().toISOString()
+        };
+    }
+
+    currentOrder.items.push(item);
+    currentOrder.totalAmount = currentOrder.items.reduce((sum, item) => sum + item.amount, 0);
+
+    // Clear input fields except customer info
+    document.getElementById('category').value = '';
+    document.getElementById('weight').value = '';
+
+    updateOrderTable();
+}
+
+// Add this helper function to update the order table
+function updateOrderTable() {
+    const tableBody = document.getElementById('orderTableBody');
+    tableBody.innerHTML = '';
+
+    currentOrder.items.forEach((item, index) => {
+        const row = `
+            <tr>
+                <td>${item.category}</td>
+                <td>${item.weight} kg</td>
+                <td>₱${item.unitPrice.toFixed(2)}</td>
+                <td>${item.additionalFee > 0 ? `₱${item.additionalFee.toFixed(2)}` : '-'}</td>
+                <td>₱${item.amount.toFixed(2)}</td>
+                <td>
+                    <button class="btn btn-danger btn-sm" onclick="removeItem(${index})">
+                        Remove
+                    </button>
+                </td>
+            </tr>
+        `;
+        tableBody.insertAdjacentHTML('beforeend', row);
+    });
+
+    // Update total amount display
+    document.getElementById('totalAmount').textContent = `₱${currentOrder.totalAmount.toFixed(2)}`;
+}
+
+// Add the removeItem function as well
+function removeItem(index) {
+    if (currentOrder && currentOrder.items[index]) {
+        currentOrder.totalAmount -= currentOrder.items[index].amount;
+        currentOrder.items.splice(index, 1);
+        
+        // Refresh the entire order table
+        const tableBody = document.getElementById('orderTableBody');
+        tableBody.innerHTML = '';
+        
+        currentOrder.items.forEach((item, idx) => {
+            const row = `
+                <tr>
+                    <td>${item.category}</td>
+                    <td>${item.weight} kg</td>
+                    <td>₱${item.unitPrice.toFixed(2)}${item.surcharge ? ` (+₱${item.surcharge} surcharge)` : ''}</td>
+                    <td>₱${item.amount.toFixed(2)}</td>
+                    <td>
+                        <button class="btn btn-danger btn-sm" onclick="removeItem(${idx})">
+                            Remove
+                        </button>
+                    </td>
+                </tr>
+            `;
+            tableBody.insertAdjacentHTML('beforeend', row);
+        });
+
+        // Update total amount display
+        document.getElementById('totalAmount').textContent = `₱${currentOrder.totalAmount.toFixed(2)}`;
+    }
+}

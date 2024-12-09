@@ -6,20 +6,20 @@ document.addEventListener('DOMContentLoaded', function() {
     updateSummaryCards();
 });
 
-function initializeInventory() {
-    if (!localStorage.getItem('inventoryItems')) {
-        const initialInventory = {
-            'Detergent Bar': { stock: 20, minStock: 15 },
-            'Fabric Conditioner': { stock: 10, minStock: 15 },
-            'Fabric Detergent': { stock: 20, minStock: 15 }
-        };
-        localStorage.setItem('inventoryItems', JSON.stringify(initialInventory));
-    }
+// function initializeInventory() {
+//     if (!localStorage.getItem('inventoryItems')) {
+//         const initialInventory = {
+//             'Detergent Bar': { stock: 20, minStock: 15 },
+//             'Fabric Conditioner': { stock: 10, minStock: 15 },
+//             'Fabric Detergent': { stock: 20, minStock: 15 }
+//         };
+//         localStorage.setItem('inventoryItems', JSON.stringify(initialInventory));
+//     }
 
-    if (!localStorage.getItem('supplyTransactions')) {
-        localStorage.setItem('supplyTransactions', JSON.stringify([]));
-    }
-}
+//     if (!localStorage.getItem('supplyTransactions')) {
+//         localStorage.setItem('supplyTransactions', JSON.stringify([]));
+//     }
+// }
 
 function setupEventListeners() {
     // Add Supply Form Submission

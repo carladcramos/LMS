@@ -7,7 +7,73 @@
     <link rel="stylesheet" href="../css/sidebar.css">
     <link rel="stylesheet" href="/frontend/css/report.css">
     <title>Sales Reports</title>
-   
+    
+    <!-- Add print styles -->
+    <style>
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            .sidebar {
+                display: none !important;
+            }
+            main {
+                margin-left: 0 !important;
+                width: 100% !important;
+                padding: 0 !important;
+            }
+            /* Table print styles */
+            .table-responsive {
+                overflow: visible !important;
+            }
+            table {
+                width: 100% !important;
+                font-size: 12px !important;
+                margin: 0 !important;
+                page-break-inside: auto !important;
+            }
+            tr {
+                page-break-inside: avoid !important;
+                page-break-after: auto !important;
+            }
+            thead {
+                display: table-header-group !important;
+            }
+            tfoot {
+                display: table-row-group !important;
+            }
+            /* Force background colors to show in print */
+            .table-primary,
+            .table-bordered,
+            tfoot tr {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            /* Adjust container padding */
+            .container-fluid {
+                padding: 0 !important;
+            }
+            /* Adjust column widths */
+            table th:nth-child(1), 
+            table td:nth-child(1) { width: 15% !important; } /* Date */
+            table th:nth-child(2), 
+            table td:nth-child(2) { width: 15% !important; } /* Order ID */
+            table th:nth-child(3), 
+            table td:nth-child(3) { width: 25% !important; } /* Customer Name */
+            table th:nth-child(4), 
+            table td:nth-child(4) { width: 15% !important; } /* Phone */
+            table th:nth-child(5), 
+            table td:nth-child(5) { width: 15% !important; } /* Status */
+            table th:nth-child(6), 
+            table td:nth-child(6) { width: 15% !important; } /* Amount */
+        }
+        .print-only {
+            display: none;
+        }
+    </style>
 </head>
 <body>
     <div class="container-fluid">
@@ -91,7 +157,7 @@
                 </div>
 
                 <!-- Enhanced Filter Section -->
-                <div class="card mb-4">
+                <div class="card mb-4 no-print">
                     <div class="card-body">
                         <div class="row g-3">
                             <div class="col-md-3">
@@ -121,6 +187,11 @@
                             </div>
                         </div>
                     </div>
+                </div>
+                
+                <!-- Add a print-only header that shows the date range -->
+                <div class="print-only mb-4">
+                    <h4>Sales Report</h4>
                 </div>
                 
                 <!-- Add this after your filter section -->

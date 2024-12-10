@@ -33,17 +33,11 @@ async function fetchOrderData() {
         if (!response.ok) throw new Error('Failed to fetch order data');
         const orders = await response.json();
         
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
+        // Get counts directly from the orders array
         return {
             pendingOrders: orders.filter(order => order.status === 'Pending').length,
             inProgressOrders: orders.filter(order => order.status === 'In Progress').length,
-            completedToday: orders.filter(order => {
-                const orderDate = new Date(order.date);
-                orderDate.setHours(0, 0, 0, 0);
-                return order.status === 'Completed' && orderDate.getTime() === today.getTime();
-            }).length,
+            completedToday: orders.filter(order => order.status === 'Completed').length,
             totalOrders: orders.length
         };
     } catch (error) {
@@ -58,24 +52,20 @@ async function fetchSalesData() {
         if (!response.ok) throw new Error('Failed to fetch sales data');
         const orders = await response.json();
 
+        // Calculate sales matching order.js logic
+        const todaySales = orders
+            .filter(order => order.status === 'Completed')
+            .reduce((sum, order) => sum + parseFloat(order.totalAmount || 0), 0);
+
+        // Weekly and monthly calculations remain the same
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-
-        // Calculate weekly and monthly date ranges
+        
         const weekStart = new Date(today);
         weekStart.setDate(today.getDate() - 7);
         
         const monthStart = new Date(today);
         monthStart.setDate(1);
-
-        // Filter and calculate sales
-        const todaySales = orders
-            .filter(order => {
-                const orderDate = new Date(order.date);
-                orderDate.setHours(0, 0, 0, 0);
-                return order.status === 'Completed' && orderDate.getTime() === today.getTime();
-            })
-            .reduce((sum, order) => sum + parseFloat(order.totalAmount || 0), 0);
 
         const weeklySales = orders
             .filter(order => {

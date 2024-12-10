@@ -238,22 +238,41 @@ async function updateStatus(orderId, newStatus) {
 // ... (rest of your existing code)   
 
 function updateStatistics() {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Get all rows from the main table
+    const mainTableBody = document.getElementById('mainTableBody');
+    const tableRows = mainTableBody?.getElementsByTagName('tr') || [];
+    
+    // Count orders by status
+    let pendingCount = 0;
+    let inProgressCount = 0;
+    let completedCount = 0;
+    let todayRevenue = 0;
 
-    const pendingOrders = orders.filter(order => order.status === 'Pending');
-    const inProgressOrders = orders.filter(order => order.status === 'In Progress');
-    const completedTodayOrders = orders.filter(order => {
-        const orderDate = new Date(order.date);
-        orderDate.setHours(0, 0, 0, 0);
-        return order.status === 'Completed' && orderDate.getTime() === today.getTime();
+    // Iterate through table rows to count statuses
+    Array.from(tableRows).forEach(row => {
+        const statusSelect = row.querySelector('select');
+        const currentStatus = statusSelect?.value;
+        const amountCell = row.cells[3]; // Assuming amount is in the 4th column
+        const amount = amountCell ? parseFloat(amountCell.textContent.replace('₱', '')) || 0 : 0;
+
+        switch (currentStatus) {
+            case 'Pending':
+                pendingCount++;
+                break;
+            case 'In Progress':
+                inProgressCount++;
+                break;
+            case 'Completed':
+                completedCount++;
+                todayRevenue += amount;
+                break;
+        }
     });
 
-    const todayRevenue = completedTodayOrders.reduce((sum, order) => sum + order.totalAmount, 0);
-
-    document.getElementById('pendingCount').textContent = pendingOrders.length;
-    document.getElementById('inProgressCount').textContent = inProgressOrders.length;
-    document.getElementById('completedTodayCount').textContent = completedTodayOrders.length;
+    // Update the statistics display
+    document.getElementById('pendingCount').textContent = pendingCount;
+    document.getElementById('inProgressCount').textContent = inProgressCount;
+    document.getElementById('completedTodayCount').textContent = completedCount;
     document.getElementById('todayRevenue').textContent = `₱${todayRevenue.toFixed(2)}`;
 }
 

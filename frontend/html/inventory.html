@@ -118,7 +118,6 @@
                                     <th>Time</th>
                                     <th>Supply Name</th>
                                     <th>Qty</th>
-                                    <th>Type</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -133,104 +132,74 @@
     </div>
 
     <!-- Edit Modal -->
-    <div class="modal fade" id="editSupplyModal" tabindex="-1" aria-labelledby="editSupplyModalLabel" aria-hidden="true">
+    <div class="modal fade" id="editSupplyModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="editSupplyModalLabel">Edit Supply In/Out Entry</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title">Edit Supply</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form id="editSupplyForm">
-                        <!-- Date -->
                         <div class="mb-3">
                             <label for="editDate" class="form-label">Date</label>
                             <input type="date" class="form-control" id="editDate" required>
                         </div>
-
-                        <!-- Supply Name -->
                         <div class="mb-3">
                             <label for="editSupplyName" class="form-label">Supply Name</label>
                             <select class="form-select" id="editSupplyName" required>
-                                <option value="" disabled selected>Select a Supply</option>
+                                <option value="" disabled>Select a supply</option>
                                 <option value="Detergent Bar">Detergent Bar</option>
-                                <option value="Fabric Conditioner">Fabric Conditioner</option>
                                 <option value="Fabric Detergent">Fabric Detergent</option>
+                                <option value="Fabric Conditioner">Fabric Conditioner</option>
                             </select>
                         </div>
-
-                        <!-- Quantity -->
                         <div class="mb-3">
                             <label for="editQuantity" class="form-label">Quantity</label>
-                            <input type="number" class="form-control" id="editQuantity" required>
-                        </div>
-
-                        <!-- Supply Type -->
-                        <div class="mb-3">
-                            <label for="editSupplyType" class="form-label">Supply Type</label>
-                            <select class="form-select" id="editSupplyType" required>
-                                <option value="" disabled selected>Select Supply Type</option>
-                                <option value="IN">IN</option>
-                                <option value="OUT">OUT</option>
-                            </select>
+                            <input type="number" class="form-control" id="editQuantity" required min="1">
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="saveEditBtn">Submit</button>
+                    <button type="button" class="btn btn-primary" id="saveEditBtn">Save Changes</button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Manage Supply Modal -->
-    <div class="modal fade" id="manageSupplyModal" tabindex="-1" aria-labelledby="manageSupplyModalLabel" aria-hidden="true">
+    <div class="modal fade" id="manageSupplyModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="manageSupplyModalLabel">Manage Supply Entry</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title">Add Supply</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form id="manageSupplyForm">
-                        <!-- Date -->
                         <div class="mb-3">
                             <label for="supplyDate" class="form-label">Date</label>
                             <input type="date" class="form-control" id="supplyDate" required>
                         </div>
-
-                        <!-- Supply Name -->
                         <div class="mb-3">
                             <label for="supplyName" class="form-label">Supply Name</label>
                             <select class="form-select" id="supplyName" required>
-                                <option value="" disabled selected>Select a Supply</option>
+                                <option value="" disabled selected>Select a supply</option>
                                 <option value="Detergent Bar">Detergent Bar</option>
-                                <option value="Fabric Conditioner">Fabric Conditioner</option>
                                 <option value="Fabric Detergent">Fabric Detergent</option>
+                                <option value="Fabric Conditioner">Fabric Conditioner</option>
                             </select>
                         </div>
-
-                        <!-- Quantity -->
                         <div class="mb-3">
                             <label for="quantity" class="form-label">Quantity</label>
-                            <input type="number" class="form-control" id="quantity" required>
-                        </div>
-
-                        <!-- Supply Type -->
-                        <div class="mb-3">
-                            <label for="supplyType" class="form-label">Supply Type</label>
-                            <select class="form-select" id="supplyType" required>
-                                <option value="" disabled selected>Select Supply Type</option>
-                                <option value="IN">IN</option>
-                                <option value="OUT">OUT</option>
-                            </select>
+                            <input type="number" class="form-control" id="quantity" required min="1">
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="submitSupplyForm">Submit</button>
+                    <button type="button" class="btn btn-primary" id="submitSupplyForm">Add Supply</button>
                 </div>
             </div>
         </div>

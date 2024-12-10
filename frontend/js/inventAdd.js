@@ -4,6 +4,7 @@ const submitButton = document.querySelector('#submitSupplyForm');
 // Define stock thresholds
 const STOCK_THRESHOLDS = {
     LOW: 10,
+    CRITICAL: 5  // Optional, if you want to use critical threshold
 };
 
 // Function to determine status badge based on quantity
@@ -51,19 +52,19 @@ function initializeInventory() {
 
 // Function to update summary cards
 function updateSummaryCards() {
-    // Get all rows from the inventory table
-    const rows = document.querySelectorAll('#inventoryTable tbody tr');
+    // Get all rows from the inventory table (not the supply history table)
+    const inventoryRows = document.querySelectorAll('#inventoryTable tbody tr');
     
-    let totalStock = 0;
+    let totalQuantity = 0;
     let lowStockCount = 0;
     
-    // Calculate totals from the actual table rows
-    rows.forEach(row => {
+    // Calculate totals from the inventory table rows
+    inventoryRows.forEach(row => {
         // Get the stock value from the stock column
         const stockCell = row.querySelector('[id$="-stock"]');
         if (stockCell) {
             const stockValue = parseInt(stockCell.textContent) || 0;
-            totalStock += stockValue;
+            totalQuantity += stockValue;
             
             // Check if this item is low on stock
             if (stockValue <= STOCK_THRESHOLDS.LOW) {
@@ -73,10 +74,10 @@ function updateSummaryCards() {
     });
     
     // Update the summary cards
-    document.getElementById('totalItems').textContent = totalStock;
+    document.getElementById('totalItems').textContent = totalQuantity;
     document.getElementById('lowStockItems').textContent = lowStockCount;
     
-    console.log('Summary updated - Total:', totalStock, 'Low Stock:', lowStockCount);
+    console.log('Summary updated - Current Stock Total:', totalQuantity, 'Current Low Stock Items:', lowStockCount);
 }
 
 // Function to fetch and display data in the table
@@ -114,7 +115,6 @@ async function populateTable() {
             const supplyRow = document.createElement('tr');
             const date = new Date(inventory.date);
             
-            // Format time with actual hours and minutes
             const timeString = date.toLocaleTimeString('en-US', {
                 hour: '2-digit',
                 minute: '2-digit',
@@ -126,11 +126,7 @@ async function populateTable() {
                 <td>${timeString}</td>
                 <td>${inventory.supplyName}</td>
                 <td>${inventory.quantity}</td>
-                <td><span class="badge ${inventory.supplyType === 'IN' ? 'bg-info' : 'bg-warning'}">${inventory.supplyType}</span></td>
                 <td>
-                    <button class="btn btn-sm btn-primary editBtn me-2" data-id="${inventory._id}">
-                        <i class="bi bi-pencil"></i> Edit
-                    </button>
                     <button class="btn btn-sm btn-danger deleteBtn" data-id="${inventory._id}">
                         <i class="bi bi-trash"></i> Delete
                     </button>
@@ -140,17 +136,31 @@ async function populateTable() {
             supplyRow.setAttribute('data-id', inventory._id);
             supplyTableBody.appendChild(supplyRow);
             
-            // Update total quantities
+            // Update total quantities considering IN/OUT transactions
             const currentTotal = totalQuantities.get(inventory.supplyName) || 0;
-            const quantityChange = inventory.supplyType === 'IN' ? inventory.quantity : -inventory.quantity;
-            totalQuantities.set(inventory.supplyName, currentTotal + quantityChange);
+            const quantityChange = inventory.supplyType === 'OUT' ? -inventory.quantity : inventory.quantity;
+            const newTotal = currentTotal + quantityChange;
+            
+            // Only store positive quantities
+            if (newTotal >= 0) {
+                totalQuantities.set(inventory.supplyName, newTotal);
+            }
         });
         
         // Populate inventory table
         let rowNumber = 1;
+        let currentTotalItems = 0;
+        let currentLowStockItems = 0;
+
         totalQuantities.forEach((quantity, supplyName) => {
             const row = document.createElement('tr');
             const stockId = supplyName.toLowerCase().replace(/ /g, '-') + '-stock';
+            
+            // Add to running totals
+            currentTotalItems += quantity;
+            if (quantity <= STOCK_THRESHOLDS.LOW) {
+                currentLowStockItems++;
+            }
             
             row.innerHTML = `
                 <td>${rowNumber}</td>
@@ -162,25 +172,16 @@ async function populateTable() {
             inventoryTableBody.appendChild(row);
             rowNumber++;
         });
+
+        // Update summary cards with current totals
+        document.getElementById('totalItems').textContent = currentTotalItems;
+        document.getElementById('lowStockItems').textContent = currentLowStockItems;
         
-        // Update summary cards
-        let totalStock = 0;
-        let lowStockCount = 0;
-        
-        totalQuantities.forEach((quantity) => {
-            totalStock += quantity;
-            if (quantity <= STOCK_THRESHOLDS.LOW) {
-                lowStockCount++;
-            }
-        });
-        
-        document.getElementById('totalItems').textContent = totalStock;
-        document.getElementById('lowStockItems').textContent = lowStockCount;
+        console.log('Tables populated successfully');
+        console.log('Current totals - Items:', currentTotalItems, 'Low Stock:', currentLowStockItems);
         
         // Reattach event listeners
         attachEventListeners();
-        
-        console.log('Tables populated successfully');
         
     } catch (error) {
         console.error('Error loading inventory data:', error);
@@ -199,10 +200,10 @@ function updateInventoryTableRow(supplyName, quantity) {
     if (existingRow) {
         // Update existing row
         const stockCell = existingRow.querySelector(`#${supplyName.toLowerCase().replace(/ /g, '-')}-stock`);
-        const statusCell = existingRow.querySelector('.badge');
+        const statusCell = existingRow.querySelector('td:last-child');
         if (stockCell) {
             stockCell.textContent = quantity;
-            statusCell.parentElement.innerHTML = getStatusBadge(quantity);
+            statusCell.innerHTML = getStatusBadge(quantity);
         }
     } else {
         // Create new row
@@ -220,7 +221,7 @@ function updateInventoryTableRow(supplyName, quantity) {
         inventoryTableBody.appendChild(newRow);
     }
 
-    // Update summary cards after any table modification
+    // Update summary cards after modifying the inventory table
     updateSummaryCards();
 }
 
@@ -244,55 +245,7 @@ const sendData = async (inventory) => {
         const result = await response.json();
         console.log('Server response:', result);
 
-        // Fetch updated inventory data and update both tables
-        const allInventoryResponse = await fetch('http://localhost:4000/api/inventory/all');
-        const allInventories = await allInventoryResponse.json();
-        
-        // Create a map to track total quantities
-        const totalQuantities = new Map();
-        
-        // Calculate totals from all inventory records
-        allInventories.forEach(inv => {
-            const currentTotal = totalQuantities.get(inv.supplyName) || 0;
-            const quantityChange = inv.supplyType === 'IN' ? inv.quantity : -inv.quantity;
-            totalQuantities.set(inv.supplyName, currentTotal + quantityChange);
-        });
-
-        // Clear and update inventory table
-        const inventoryTableBody = document.querySelector('#inventoryTable tbody');
-        inventoryTableBody.innerHTML = '';
-
-        let rowNumber = 1;
-        totalQuantities.forEach((quantity, supplyName) => {
-            const row = document.createElement('tr');
-            const stockId = supplyName.toLowerCase().replace(/ /g, '-') + '-stock';
-            
-            row.innerHTML = `
-                <td>${rowNumber}</td>
-                <td class="inventory-supply-name">${supplyName}</td>
-                <td id="${stockId}">${quantity}</td>
-                <td>${getStatusBadge(quantity)}</td>
-            `;
-            
-            inventoryTableBody.appendChild(row);
-            rowNumber++;
-        });
-
-        // Update summary cards
-        let totalStock = 0;
-        let lowStockCount = 0;
-        
-        totalQuantities.forEach((quantity) => {
-            totalStock += quantity;
-            if (quantity <= STOCK_THRESHOLDS.LOW) {
-                lowStockCount++;
-            }
-        });
-
-        document.getElementById('totalItems').textContent = totalStock;
-        document.getElementById('lowStockItems').textContent = lowStockCount;
-
-        // Refresh the entire display
+        // Refresh the display
         await populateTable();
         
         return result;
@@ -302,7 +255,7 @@ const sendData = async (inventory) => {
     }
 };
 
-// Handle form submission
+// Update form submission handler
 submitButton.addEventListener('click', async (event) => {
     event.preventDefault();
     
@@ -324,10 +277,10 @@ submitButton.addEventListener('click', async (event) => {
         }
 
         const inventory = {
-            date: dateToUse.toISOString(), // This will include the actual current time
+            date: dateToUse.toISOString(),
             supplyName: document.querySelector('#supplyName').value,
             quantity: parseInt(document.querySelector('#quantity').value),
-            supplyType: document.querySelector('#supplyType').value,
+            supplyType: 'IN'  // Automatically set to 'IN'
         };
         
         console.log('Sending inventory data with time:', dateToUse.toLocaleTimeString());
@@ -353,9 +306,9 @@ submitButton.addEventListener('click', async (event) => {
     }
 });
 
-// Update attachEventListeners to include edit button functionality
+// Update attachEventListeners function - edit button section
 function attachEventListeners() {
-    // Existing delete button listeners
+    // Only keep the delete button listeners
     document.querySelectorAll('.deleteBtn').forEach(button => {
         button.addEventListener('click', async (event) => {
             event.preventDefault();
@@ -396,88 +349,6 @@ function attachEventListeners() {
                 }
             }
         });
-    });
-
-    // Add edit button listeners
-    document.querySelectorAll('.editBtn').forEach(button => {
-        button.addEventListener('click', async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            
-            const editBtn = event.target.closest('.editBtn');
-            if (!editBtn) return;
-            
-            const row = editBtn.closest('tr');
-            const id = row.getAttribute('data-id');
-            
-            try {
-                const response = await fetch(`http://localhost:4000/api/inventory/${id}`);
-                const inventory = await response.json();
-                
-                if (response.ok) {
-                    // Populate edit modal with inventory data
-                    document.getElementById('editDate').value = inventory.date.split('T')[0];
-                    document.getElementById('editSupplyName').value = inventory.supplyName;
-                    document.getElementById('editQuantity').value = inventory.quantity;
-                    document.getElementById('editSupplyType').value = inventory.supplyType;
-                    
-                    // Store the ID for use when saving
-                    document.getElementById('editSupplyForm').setAttribute('data-id', id);
-                    
-                    // Show the edit modal
-                    const editModal = new bootstrap.Modal(document.getElementById('editSupplyModal'));
-                    editModal.show();
-                } else {
-                    throw new Error('Failed to fetch inventory item');
-                }
-            } catch (error) {
-                console.error('Error fetching inventory item:', error);
-                alert('Error loading inventory item for editing');
-            }
-        });
-    });
-
-    // Add save edit button listener
-    document.getElementById('saveEditBtn').addEventListener('click', async () => {
-        const form = document.getElementById('editSupplyForm');
-        const id = form.getAttribute('data-id');
-        
-        if (form.checkValidity()) {
-            const updatedInventory = {
-                date: document.getElementById('editDate').value,
-                supplyName: document.getElementById('editSupplyName').value,
-                quantity: parseInt(document.getElementById('editQuantity').value),
-                supplyType: document.getElementById('editSupplyType').value
-            };
-            
-            try {
-                const response = await fetch(`http://localhost:4000/api/inventory/${id}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(updatedInventory)
-                });
-                
-                if (response.ok) {
-                    // Hide modal
-                    const editModal = bootstrap.Modal.getInstance(document.getElementById('editSupplyModal'));
-                    editModal.hide();
-                    
-                    // Refresh tables
-                    await populateTable();
-                    
-                    alert('Inventory updated successfully!');
-                } else {
-                    throw new Error('Failed to update inventory');
-                }
-            } catch (error) {
-                console.error('Error updating inventory:', error);
-                alert('Failed to update inventory');
-            }
-        } else {
-            form.reportValidity();
-        }
     });
 }
 

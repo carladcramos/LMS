@@ -105,17 +105,39 @@ async function fetchSalesData() {
 
 async function fetchInventoryData() {
     try {
-        const response = await fetch('http://localhost:4000/api/inventory');
+        const response = await fetch('http://localhost:4000/api/inventory/all');
         if (!response.ok) throw new Error('Failed to fetch inventory data');
-        const inventory = await response.json();
+        const inventories = await response.json();
 
-        // Calculate low stock items (items with quantity below 10)
-        const lowStockThreshold = 10;
-        const lowStockItems = inventory.filter(item => item.quantity < lowStockThreshold).length;
+        // Calculate totals similar to inventAdd.js
+        const totalQuantities = new Map();
+        
+        // Process all inventory transactions
+        inventories.forEach(inventory => {
+            const currentTotal = totalQuantities.get(inventory.supplyName) || 0;
+            const quantityChange = inventory.supplyType === 'OUT' ? -inventory.quantity : inventory.quantity;
+            const newTotal = currentTotal + quantityChange;
+            
+            if (newTotal >= 0) {
+                totalQuantities.set(inventory.supplyName, newTotal);
+            }
+        });
+
+        // Calculate summary data
+        let totalItems = 0;
+        let lowStockItems = 0;
+        const lowStockThreshold = 10; // Matching STOCK_THRESHOLDS.LOW from inventAdd.js
+
+        totalQuantities.forEach((quantity) => {
+            totalItems += quantity;
+            if (quantity <= lowStockThreshold) {
+                lowStockItems++;
+            }
+        });
 
         return {
-            totalItems: inventory.length,
-            lowStockItems: lowStockItems
+            totalItems,
+            lowStockItems
         };
     } catch (error) {
         console.error('Error in fetchInventoryData:', error);
